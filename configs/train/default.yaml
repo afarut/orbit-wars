@@ -1,0 +1,15 @@
+# Гиперпараметры обучения. batch_size — число ХОДОВ в батче (на один процесс/GPU);
+# паддинг сущностей динамический. При DDP эффективный батч = batch_size * world_size.
+batch_size: 256
+epochs: 5
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 1.0
+amp: true                # авто-выкл вне CUDA
+log_every: 50            # шагов между лог-строками (rank 0)
+value_weight: 0.0        # value-голову не учим (датасет winner-only); задел на будущее
+ckpt_dir: checkpoints    # относительно hydra run-dir
+save_each_epoch: true    # хранить отдельный epoch{N}.pt на каждую эпоху (помимо last/best)
+tensorboard: true        # логи TensorBoard (пишет только rank 0)
+tb_dir: tb               # относительно hydra run-dir; смотреть: tensorboard --logdir outputs

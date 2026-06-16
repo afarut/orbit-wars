@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>Orbit Wars | Kaggle</title>
+  <meta charset="utf-8">
+    <meta name="robots" content="index, follow">
+  <meta name="description" content="Discover what actually works in AI. Join millions of builders, researchers, and labs evaluating agents, models, and frontier technology through crowdsourced benchmarks, competitions, and hackathons.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
+  <meta name="theme-color" content="#008ABC">
+  <script src="Orbit%20Wars%20_%20Kaggle_files/cb=gapi.js" nonce="" async=""></script><script nonce="" type="text/javascript">
+    window["pageRequestStartTime"] = 1781194951028;
+    window["pageRequestEndTime"] = 1781194951050;
+    window["initialPageLoadStartTime"] = new Date().getTime();
+  </script>
+  <script nonce="" id="gsi-client" src="Orbit%20Wars%20_%20Kaggle_files/client" async="" defer="defer"></script>
+  <script nonce="">window.KAGGLE_JUPYTERLAB_PATH = "/static/assets/jupyterlab-v4/jupyterlab-index-aa1d65499b7db8cf.html";</script>
+  <link rel="preconnect" href="https://www.google-analytics.com/" crossorigin="anonymous"><link rel="preconnect" href="https://stats.g.doubleclick.net/"><link rel="preconnect" href="https://storage.googleapis.com/"><link rel="preconnect" href="https://apis.google.com/">
+    <link href="https://www.kaggle.com/static/images/favicon.ico" rel="shortcut icon" type="image/x-icon" id="dynamic-favicon">
+  <link rel="manifest" href="https://www.kaggle.com/static/json/manifest.json" crossorigin="use-credentials">
+
+
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+
+  <link href="Orbit%20Wars%20_%20Kaggle_files/css.css" rel="preload" as="style">
+  <link href="Orbit%20Wars%20_%20Kaggle_files/css2.css" rel="preload" as="style">
+  <link href="Orbit%20Wars%20_%20Kaggle_files/css.css" rel="stylesheet" media="all" id="async-google-font-1">
+  <link href="Orbit%20Wars%20_%20Kaggle_files/css2.css" rel="stylesheet" media="all" id="async-google-font-2">
+  <script nonce="" type="text/javascript">
+    const styleSheetIds = ["async-google-font-1", "async-google-font-2"];
+    styleSheetIds.forEach(function (id) {
+      document.getElementById(id).addEventListener("load", function() {
+        this.media = "all";
+      });
+    });
+  </script>
+
+
+    <link rel="stylesheet" type="text/css" href="Orbit%20Wars%20_%20Kaggle_files/app.css">
+
+  
+    
+ 
+      <script nonce="">
+        try{(function(a,s,y,n,c,h,i,d,e){d=s.createElement("style");
+        d.appendChild(s.createTextNode(""));s.head.appendChild(d);d=d.sheet;
+        y=y.map(x => d.insertRule(x + "{ opacity: 0 !important }"));
+        h.start=1*new Date;h.end=i=function(){y.forEach(x => x<d.cssRules.length ? d.deleteRule(x) : {})};
+        (a[n]=a[n]||[]).hide=h;setTimeout(function(){i();h.end=null},c);h.timeout=c;
+        })(window,document,['.site-header-react__nav'],'dataLayer',2000,{'GTM-52LNT9S':true});}catch(ex){}
+    </script><style></style>
+    <script nonce="">
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-T7QHS60L4Q', {
+            'optimize_id': 'GTM-52LNT9S',
+            'displayFeaturesTask': null,
+            'send_page_view': false,
+            'content_group1': 'Home',
+            'user_properties': {
+                'logged_in': true,
+            }
+        });
+    </script>
+    <script nonce="" async="" src="Orbit%20Wars%20_%20Kaggle_files/js"></script>
+
+
+  
+    
+
+
+    <meta property="og:image" content="https://www.kaggle.com/static/images/logos/kaggle-logo-opengraph.png">
+    <meta property="twitter:image" content="https://www.kaggle.com/static/images/logos/kaggle-logo-opengraph-square.png">
+
+  <meta name="twitter:site" content="@Kaggle"> 
+  
+    
+
+  
+    
+
+  
+    
+
+
+
+    <script nonce="">window['useKaggleAnalytics'] = true;</script>
+
+  <script id="gapi-target" nonce="" src="Orbit%20Wars%20_%20Kaggle_files/api.js" defer="defer" async="" gapi_processed="true"></script>
+  <script nonce="" src="Orbit%20Wars%20_%20Kaggle_files/runtime.js"></script>
+  <script nonce="" src="Orbit%20Wars%20_%20Kaggle_files/vendor.js"></script>
+  <script nonce="" src="Orbit%20Wars%20_%20Kaggle_files/app.js"></script><style id="_goober"> .go1475592160{height:0;}.go1671063245{height:auto;}.go1888806478{display:flex;flex-wrap:wrap;flex-grow:1;}@media (min-width:600px){.go1888806478{flex-grow:initial;min-width:288px;}}.go167266335{background-color:#313131;font-size:0.875rem;line-height:1.43;letter-spacing:0.01071em;color:#fff;align-items:center;padding:6px 16px;border-radius:4px;box-shadow:0px 3px 5px -1px rgba(0,0,0,0.2),0px 6px 10px 0px rgba(0,0,0,0.14),0px 1px 18px 0px rgba(0,0,0,0.12);}.go3162094071{padding-left:20px;}.go3844575157{background-color:#313131;}.go1725278324{background-color:#43a047;}.go3651055292{background-color:#d32f2f;}.go4215275574{background-color:#ff9800;}.go1930647212{background-color:#2196f3;}.go946087465{display:flex;align-items:center;padding:8px 0;}.go703367398{display:flex;align-items:center;margin-left:auto;padding-left:16px;margin-right:-8px;}.go3963613292{width:100%;position:relative;transform:translateX(0);top:0;right:0;bottom:0;left:0;min-width:288px;}.go1141946668{box-sizing:border-box;display:flex;max-height:100%;position:fixed;z-index:1400;height:auto;width:auto;transition:top 300ms ease 0ms,right 300ms ease 0ms,bottom 300ms ease 0ms,left 300ms ease 0ms,max-width 300ms ease 0ms;pointer-events:none;max-width:calc(100% - 40px);}.go1141946668 .notistack-CollapseWrapper{padding:6px 0px;transition:padding 300ms ease 0ms;}@media (max-width:599.95px){.go1141946668{width:100%;max-width:calc(100% - 32px);}}.go3868796639 .notistack-CollapseWrapper{padding:2px 0px;}.go3118922589{top:14px;flex-direction:column;}.go1453831412{bottom:14px;flex-direction:column-reverse;}.go4027089540{left:20px;}@media (min-width:600px){.go4027089540{align-items:flex-start;}}@media (max-width:599.95px){.go4027089540{left:16px;}}.go2989568495{right:20px;}@media (min-width:600px){.go2989568495{align-items:flex-end;}}@media (max-width:599.95px){.go2989568495{right:16px;}}.go4034260886{left:50%;transform:translateX(-50%);}@media (min-width:600px){.go4034260886{align-items:center;}}</style>
+    <script nonce="" type="text/javascript">
+      window.kaggleStackdriverConfig = {
+        key: 'AIzaSyA4eNqUdRRskJsCZWVz-qL655Xa5JEMreE',
+        projectId: 'kaggle-161607',
+        service: 'web-fe',
+        version: 'ci',
+        userId: '8491148'
+      }
+    </script>
+<script type="text/javascript" src="Orbit%20Wars%20_%20Kaggle_files/MathJax.js"></script><style data-styled="active" data-styled-version="6.4.2"></style><style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 5px 0px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; -khtml-border-radius: 5px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 1px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: .7em}
+.MathJax_MenuRadioCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuLabel {padding: 1px 2em 3px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #DDDDDD; margin: 4px 3px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: #606872; color: white}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888; display: contents}
+#MathJax_Message {position: fixed; left: 1px; bottom: 2px; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover, .MJXp-munder {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > *, .MJXp-munder > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><style data-emotion="css-global" data-s=""></style><style data-emotion="css-global" data-s=""></style><style data-emotion="css" data-s=""></style><style id="googleidentityservice_button_styles" nonce="">.qJTHM{-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;color:#202124;direction:ltr;-webkit-touch-callout:none;font-family:Roboto-Regular,arial,sans-serif;-webkit-font-smoothing:antialiased;font-weight:400;margin:0;overflow:hidden;-webkit-text-size-adjust:100%}.ynRLnc{left:-9999px;position:absolute;top:-9999px}.L6cTce{display:none}.bltWBb{overflow-wrap:break-word;word-break:break-word}.hSRGPd{color:#1a73e8;cursor:pointer;font-weight:500;text-decoration:none}.Bz112c-W3lGp{height:16px;width:16px}.Bz112c-E3DyYd{height:20px;width:20px}.Bz112c-r9oPif{height:24px;width:24px}.Bz112c-u2z5K{height:36px;width:36px}.Bz112c-uaxL4e{border-radius:10px}.LgbsSe-Bz112c{display:block}.S9gUrf-YoZ4jf{border:none;margin:0;padding:0}.S9gUrf-YoZ4jf *{border:none;margin:0;padding:0}.fFW7wc-ibnC6b>.aZ2wEe>div{border-color:#4285f4}.P1ekSe-ZMv3u{transition:height .2s linear}.P1ekSe-ZMv3u>div:first-child{background-color:#1a73e8!important;transition:width .3s linear}.P1ekSe-ZMv3u>div:nth-child(2){background-image:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,.7)),linear-gradient(90deg,#1a73e8,#1a73e8)!important}.P1ekSe-ZMv3u>div:nth-child(3){background-image:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,.7)),linear-gradient(90deg,#1a73e8,#1a73e8)!important}.haAclf{display:inline-block}.nsm7Bb-HzV7m-LgbsSe{border-radius:4px;-moz-box-sizing:border-box;box-sizing:border-box;transition:background-color .218s,border-color .218s;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;-webkit-appearance:none;background-color:#fff;background-image:none;border:1px solid #dadce0;color:#3c4043;cursor:pointer;font-family:Google Sans,arial,sans-serif;font-size:14px;height:40px;letter-spacing:.25px;outline:none;overflow:hidden;padding:0 12px;position:relative;text-align:center;vertical-align:middle;white-space:nowrap;width:auto}@media screen and (-ms-high-contrast:active){.nsm7Bb-HzV7m-LgbsSe{border:2px solid windowText;color:windowText}}@media screen and (preferes-contrast:more){.nsm7Bb-HzV7m-LgbsSe{color:#000}}.nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe{font-size:14px;height:32px;letter-spacing:.25px;padding:0 10px}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe{font-size:11px;height:20px;letter-spacing:.3px;padding:0 8px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe{padding:0;width:40px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe.pSzOP-SxQuSe{width:32px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe.purZT-SxQuSe{width:20px}.nsm7Bb-HzV7m-LgbsSe.JGcpL-RbRzK{border-radius:20px}.nsm7Bb-HzV7m-LgbsSe.JGcpL-RbRzK.pSzOP-SxQuSe{border-radius:16px}.nsm7Bb-HzV7m-LgbsSe.JGcpL-RbRzK.purZT-SxQuSe{border-radius:10px}.nsm7Bb-HzV7m-LgbsSe.i5vt6e-to915-Ia7Qfc{border:1px solid #8e918f;background-color:#131314;color:#e3e3e3}.nsm7Bb-HzV7m-LgbsSe.MFS4be-Ia7Qfc{border:none;color:#fff}.nsm7Bb-HzV7m-LgbsSe.MFS4be-v3pZbf-Ia7Qfc{background-color:#1a73e8}.nsm7Bb-HzV7m-LgbsSe.MFS4be-JaPV2b-Ia7Qfc{background-color:#202124;color:#e8eaed}@media screen and (prefers-contrast:more){.nsm7Bb-HzV7m-LgbsSe.MFS4be-JaPV2b-Ia7Qfc{color:#fff}}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{height:18px;margin-right:8px;min-width:18px;width:18px}.nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{height:14px;min-width:14px;width:14px}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{height:10px;min-width:10px;width:10px}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-Bz112c{margin-left:8px;margin-right:-4px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{margin:0;padding:10px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe.pSzOP-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{padding:8px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe.purZT-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{padding:4px}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-top-left-radius:3px;border-bottom-left-radius:3px;display:-moz-box;display:flex;-moz-box-pack:center;justify-content:center;-moz-box-align:center;align-items:center;background-color:#fff;height:36px;margin-left:-10px;margin-right:12px;min-width:36px;width:36px}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf .nsm7Bb-HzV7m-LgbsSe-Bz112c,.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf .nsm7Bb-HzV7m-LgbsSe-Bz112c{margin:0;padding:0}.nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{height:28px;margin-left:-8px;margin-right:10px;min-width:28px;width:28px}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{height:16px;margin-left:-6px;margin-right:8px;min-width:16px;width:16px}.nsm7Bb-HzV7m-LgbsSe.Bz112c-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:3px;margin-left:2px;margin-right:0;padding:0}.nsm7Bb-HzV7m-LgbsSe.JGcpL-RbRzK .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:18px}.nsm7Bb-HzV7m-LgbsSe.pSzOP-SxQuSe.JGcpL-RbRzK .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:14px}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe.JGcpL-RbRzK .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:8px}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-bN97Pc-sM5MNb{display:-moz-box;display:flex;-moz-box-align:center;align-items:center;-moz-box-orient:horizontal;-moz-box-direction:normal;flex-direction:row;-moz-box-pack:justify;justify-content:space-between;flex-wrap:nowrap;height:100%;position:relative;width:100%}.nsm7Bb-HzV7m-LgbsSe .oXtfBe-l4eHX{-moz-box-pack:center;justify-content:center}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-BPrWId{-moz-box-flex:1;flex-grow:1;font-family:Google Sans,arial,sans-serif;font-weight:500;overflow:hidden;text-overflow:ellipsis;vertical-align:top}.nsm7Bb-HzV7m-LgbsSe.purZT-SxQuSe .nsm7Bb-HzV7m-LgbsSe-BPrWId{font-weight:300}.nsm7Bb-HzV7m-LgbsSe .oXtfBe-l4eHX .nsm7Bb-HzV7m-LgbsSe-BPrWId{-moz-box-flex:0;flex-grow:0}.nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-MJoBVe{transition:background-color .218s;bottom:0;left:0;position:absolute;right:0;top:0}.nsm7Bb-HzV7m-LgbsSe:focus,.nsm7Bb-HzV7m-LgbsSe:hover{box-shadow:none;border-color:rgb(210,227,252);outline:none}.nsm7Bb-HzV7m-LgbsSe:focus-within{outline:2px solid #00639b;border-color:transparent}.nsm7Bb-HzV7m-LgbsSe:hover .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(66,133,244,.08)}.nsm7Bb-HzV7m-LgbsSe:active .nsm7Bb-HzV7m-LgbsSe-MJoBVe,.nsm7Bb-HzV7m-LgbsSe:focus .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(66,133,244,.1)}.nsm7Bb-HzV7m-LgbsSe.i5vt6e-to915-Ia7Qfc:hover .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(255,255,255,.08)}.nsm7Bb-HzV7m-LgbsSe.i5vt6e-to915-Ia7Qfc:active .nsm7Bb-HzV7m-LgbsSe-MJoBVe,.nsm7Bb-HzV7m-LgbsSe.i5vt6e-to915-Ia7Qfc:focus .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(255,255,255,.12)}.nsm7Bb-HzV7m-LgbsSe.MFS4be-Ia7Qfc:hover .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(255,255,255,.24)}.nsm7Bb-HzV7m-LgbsSe.MFS4be-Ia7Qfc:active .nsm7Bb-HzV7m-LgbsSe-MJoBVe,.nsm7Bb-HzV7m-LgbsSe.MFS4be-Ia7Qfc:focus .nsm7Bb-HzV7m-LgbsSe-MJoBVe{background:rgba(255,255,255,.32)}.nsm7Bb-HzV7m-LgbsSe .n1UuX-DkfjY{border-radius:50%;display:-moz-box;display:flex;height:20px;margin-left:-4px;margin-right:8px;min-width:20px;width:20px}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId{font-family:Roboto;font-size:12px;text-align:left}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff .fmcmS,.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .ssJRIf{overflow:hidden;text-overflow:ellipsis}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff{display:-moz-box;display:flex;-moz-box-align:center;align-items:center;color:#5f6368;fill:#5f6368;font-size:11px;font-weight:400}.nsm7Bb-HzV7m-LgbsSe.jVeSEe.MFS4be-Ia7Qfc .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff{color:#e8eaed;fill:#e8eaed}@media screen and (prefers-contrast:more){.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff,.nsm7Bb-HzV7m-LgbsSe.jVeSEe.MFS4be-Ia7Qfc .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff{color:#000;fill:#000}}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-BPrWId .K4efff .Bz112c{height:18px;margin:-3px -3px -3px 2px;min-width:18px;width:18px}.nsm7Bb-HzV7m-LgbsSe.jVeSEe .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-top-left-radius:0;border-bottom-left-radius:0;border-top-right-radius:3px;border-bottom-right-radius:3px;margin-left:12px;margin-right:-10px}.nsm7Bb-HzV7m-LgbsSe.jVeSEe.JGcpL-RbRzK .nsm7Bb-HzV7m-LgbsSe-Bz112c-haAclf{border-radius:18px}.L5Fo6c-sM5MNb{border:0;display:block;left:0;position:relative;top:0}.L5Fo6c-bF1uUb{border-radius:4px;bottom:0;cursor:pointer;left:0;position:absolute;right:0;top:0}.L5Fo6c-bF1uUb:focus{border:none;outline:none}sentinel{}</style><link rel="stylesheet" type="text/css" href="Orbit%20Wars%20_%20Kaggle_files/4912.70c86abc3e838bdc.css"></head>
+<body style="background-color: rgb(28, 29, 32);"><div id="MathJax_Message" style="display: none;"></div>
+  <div id="root"><nav aria-label="Main Kaggle page navigation" class="sc-biWTsH ijZsHf"><div class="sc-hglrMW cKDOTY"><div class="sc-hZhKrD jzEBVF"><div class="sc-cHazmW hwbXxe"><button aria-label="Navigation menu" title="Navigation menu" class="sc-iBjNZB bGduwL google-symbols notranslate">menu</button></div><a href="#site-content" class="sc-dSDPUr ixAKjE">Skip to<br>content</a><div data-testid="kaggle-logo-wrapper" class="sc-Jclpx kOOdLY"><a href="https://www.kaggle.com/" aria-label="Return to Kaggle home page"><img src="Orbit%20Wars%20_%20Kaggle_files/site-logo.svg" alt="Kaggle" class="sc-tIyEa jALJjq"></a></div></div></div><div class="sc-findPx hSJydp"><button class="sc-Jwmfr jsHtZW"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;"><path fill-rule="evenodd" clip-rule="evenodd" d="M20 30L20 16L16 20L16 30L20 30Z" fill="#20BEFF"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M20 20L30 20L30 16L20 16L20 20Z" fill="#20BEFF"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M16 20L20 16L15.937 16L6 16L6 20L16 20Z" fill="#20BEFF"></path><rect x="20" y="16" width="4" height="10" transform="rotate(-180 20 16)" fill="#20BEFF"></rect></svg><span class="sc-dILkzW sc-gGKKzG iNaPtF hmZcDd">Create</span></button></div><div class="sc-lfBCjM dySFdx"><div class="sc-hCXID bekTTJ"><div class="sc-DSdOV bWAwBN"><div class="sc-dwNPMq eELAeC"><div class="sc-hjYznJ hSlpsI"><div class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root sc-dkIoQT dLCgVn css-feqhe6"><div class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-adornedStart css-ipre3h"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt bpVxIz notranslate css-1jgtvd5" aria-hidden="true" style="margin-right: 8px;">search</span><input aria-invalid="false" autocomplete="off" id=":r2:" placeholder="Search" type="text" class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputAdornedStart css-iyhe1a"><fieldset aria-hidden="true" class="MuiOutlinedInput-notchedOutline css-nqlg3w"><legend class="css-ihdtdm"><span class="notranslate">​</span></legend></fieldset></div></div></div></div><ul class="MuiList-root km-list css-1uzmcsd" role="list"><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Home List Item"><div class="sc-euUkyj cXgshv sc-hGLXNb bCUebD km-listitem--small"><a aria-label="Home" tabindex="0" href="https://www.kaggle.com/" data-click-log-id="home" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt dVcKNL notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" title="Home" aria-label="Home">explore</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx iZNPId">Home</p></div></div></a></div></li><div role="presentation" class="sc-ehQGwK bWWbhh"><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Competitions List Item"><div class="sc-euUkyj ikyMME sc-hGLXNb bCUebD km-listitem--small"><a aria-current="page" aria-label="Competitions" tabindex="0" href="https://www.kaggle.com/competitions" data-click-log-id="competitions" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt kexQqv notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" title="Competitions" aria-label="Competitions">emoji_events</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx ffIPOn">Competitions</p></div></div></a></div></li><div class="sc-dbHHos krDUor"></div></div><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Benchmarks List Item"><div class="sc-euUkyj cXgshv sc-hGLXNb bCUebD km-listitem--small"><a aria-label="Benchmarks" tabindex="0" href="https://www.kaggle.com/benchmarks" data-click-log-id="benchmarks" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt dVcKNL notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" title="Benchmarks" aria-label="Benchmarks">leaderboard</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx iZNPId">Benchmarks</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Game Arena List Item"><div class="sc-euUkyj cXgshv sc-hGLXNb bCUebD km-listitem--small"><a aria-label="Game Arena" tabindex="0" href="https://www.kaggle.com/game-arena" data-click-log-id="game-arena" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt dVcKNL notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" title="Game Arena" aria-label="Game Arena">smart_toy</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx iZNPId">Game Arena</p></div></div></a></div></li></ul><ul class="MuiList-root km-list css-1uzmcsd" role="list"><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Data Hub List Item"><div class="sc-euUkyj cXgshv sc-hGLXNb bCUebD km-listitem--small"><a aria-current="false" aria-expanded="false" aria-label="Data Hub" tabindex="0" href="#" data-click-log-id="data-hub" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt dVcKNL notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" title="Data Hub" aria-label="Data Hub">code</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx iZNPId">Data Hub</p></div></div></a><div style="padding-right: 12px;" class="sc-ilnrqe fdhDmN"><button aria-label="Expand" title="Expand" class="sc-iBjNZB ianyQQ google-symbols notranslate">expand_more</button></div></div></li></ul><ul class="MuiList-root km-list css-1uzmcsd" role="list"><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="More on Kaggle List Item"><div class="sc-euUkyj cXgshv sc-hGLXNb bCUebD km-listitem--small"><a aria-current="false" aria-expanded="false" aria-label="More on Kaggle" tabindex="0" href="#" data-click-log-id="more" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt dVcKNL notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" title="More" aria-label="More">format_list_bulleted</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx iZNPId">More</p></div></div></a><div style="padding-right: 12px;" class="sc-ilnrqe fdhDmN"><button aria-label="Expand" title="Expand" class="sc-iBjNZB ianyQQ google-symbols notranslate">expand_more</button></div></div></li></ul></div><div><div role="separator" class="sc-khYboC eRaHXH sc-BiJvk kwmcLw"></div><ul><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Your Work List Item"><div class="sc-euUkyj cXgshv sc-hGLXNb bCUebD km-listitem--small"><a aria-label="Your Work" tabindex="0" href="https://www.kaggle.com/work" data-click-log-id="your-work" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt dVcKNL notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" title="Your Work" aria-label="Your Work">note_alt</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx iZNPId">Your Work</p></div></div></a><div style="padding-right: 12px;" class="sc-ilnrqe fdhDmN"><button aria-label="Collapse Your Work" title="Collapse" class="sc-iBjNZB ianyQQ google-symbols notranslate" aria-expanded="true">expand_less</button></div></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Collapse Viewed List Item"><div class="sc-euUkyj cXgshv sc-hGLXNb bCUebD km-listitem--small"><a aria-expanded="true" aria-label="Collapse Viewed" tabindex="0" href="#" data-click-log-id="viewed" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt dVcKNL notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" style="visibility: hidden;">code</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx iZNPId">Viewed</p></div></div></a><div style="padding-right: 12px;" class="sc-ilnrqe fdhDmN"><button aria-label="Collapse Viewed" title="Collapse Viewed" class="sc-iBjNZB ianyQQ google-symbols notranslate">expand_less</button></div></div></li><li class="sc-fUplsD lgRrvV"><ul class="MuiList-root km-list sc-cvtUcm jHIajL css-1uzmcsd" role="list"><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Orbit Wars List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="Orbit Wars" tabindex="0" href="https://www.kaggle.com/competitions/orbit-wars" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/orbit-wars-large-slow.gif" alt="" width="20" height="20" class="sc-fTpUzR pvwDw"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">Orbit Wars</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="BirdCLEF+ 2026 List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="BirdCLEF+ 2026" tabindex="0" href="https://www.kaggle.com/competitions/birdclef-2026" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/thumb76_76_002.png" alt="" width="20" height="20" class="sc-fTpUzR pvwDw"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">BirdCLEF+ 2026</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="NVIDIA Nemotron Model Reasoning Challenge List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="NVIDIA Nemotron Model Reasoning Challenge" tabindex="0" href="https://www.kaggle.com/competitions/nvidia-nemotron-model-reasoning-challenge" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/thumb76_76.png" alt="" width="20" height="20" class="sc-fTpUzR pvwDw"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">NVIDIA Nemotron Model Reasoning Challenge</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="ROGII - Wellbore Geology Prediction List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="ROGII - Wellbore Geology Prediction" tabindex="0" href="https://www.kaggle.com/competitions/rogii-wellbore-geology-prediction" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/thumb76_76_003.png" alt="" width="20" height="20" class="sc-fTpUzR pvwDw"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">ROGII - Wellbore Geology Prediction</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Detecting antibiotics List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="Detecting antibiotics" tabindex="0" href="https://www.kaggle.com/competitions/detecting-antibiotics" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/thumb76_76.jpg" alt="" width="20" height="20" class="sc-fTpUzR pvwDw"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">Detecting antibiotics</p></div></div></a></div></li></ul></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Collapse Edited List Item"><div class="sc-euUkyj cXgshv sc-hGLXNb bCUebD km-listitem--small"><a aria-expanded="true" aria-label="Collapse Edited" tabindex="0" href="#" data-click-log-id="edited" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div style="min-width: 24px;" class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt dVcKNL notranslate sc-iusvXA gtIPch css-1jgtvd5" aria-hidden="true" style="visibility: hidden;">code</span></div></div><div class="sc-hCcPtG sc-bitxrY gTYZQg iQsabx"><p style="padding-left: 4px;" class="sc-fFCZOx iZNPId">Edited</p></div></div></a><div style="padding-right: 12px;" class="sc-ilnrqe fdhDmN"><button aria-label="Collapse Edited" title="Collapse Edited" class="sc-iBjNZB ianyQQ google-symbols notranslate">expand_less</button></div></div></li><li class="sc-fUplsD lgRrvV"><ul class="MuiList-root km-list sc-cvtUcm jHIajL css-1uzmcsd" role="list"><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="birdclef-2026-sed-diag List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="birdclef-2026-sed-diag" tabindex="0" href="https://www.kaggle.com/code/doifgoox/birdclef-2026-sed-diag" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/default-thumb.png" alt="" width="20" height="20" class="sc-fTpUzR eXJWwY"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">birdclef-2026-sed-diag</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="birdclef 2026 power mean p2 List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="birdclef 2026 power mean p2" tabindex="0" href="https://www.kaggle.com/code/doifgoox/birdclef-2026-power-mean-p2" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/default-thumb.png" alt="" width="20" height="20" class="sc-fTpUzR eXJWwY"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">birdclef 2026 power mean p2</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="notebook568b9e141b List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="notebook568b9e141b" tabindex="0" href="https://www.kaggle.com/code/doifgoox/notebook568b9e141b" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/default-thumb.png" alt="" width="20" height="20" class="sc-fTpUzR eXJWwY"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">notebook568b9e141b</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="pantanal-distill-birdclef2026-ONNX List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="pantanal-distill-birdclef2026-ONNX" tabindex="0" href="https://www.kaggle.com/code/doifgoox/pantanal-distill-birdclef2026-onnx" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/default-thumb.png" alt="" width="20" height="20" class="sc-fTpUzR eXJWwY"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">pantanal-distill-birdclef2026-ONNX</p></div></div></a></div></li><li class="MuiListItem-root MuiListItem-gutters sc-gILgRS iIxpCt css-14khl9n" aria-label="Fork of Titanic Tutorial (alexisbcook) List Item"><div class="sc-euUkyj cXgshv sc-bTZKdb gpsALw km-listitem--dense"><a aria-label="Fork of Titanic Tutorial (alexisbcook)" tabindex="0" href="https://www.kaggle.com/code/doifgoox/fork-of-titanic-tutorial-alexisbcook" role="link" class="sc-XpSrr bPLDUT"><div class="sc-fHmNBE dJBsWw"><div class="sc-dtvRhV llRLRt"><div class="sc-dlgOLa iymbBI"><img src="Orbit%20Wars%20_%20Kaggle_files/default-thumb.png" alt="" width="20" height="20" class="sc-fTpUzR eXJWwY"></div></div><div class="sc-hCcPtG sc-bitxrY iAzhEW iQsabx"><p class="sc-fFCZOx sc-hRoixq iZNPId ulIIt">Fork of Titanic Tutorial (alexisbcook)</p></div></div></a></div></li></ul></li></ul></div></div><div class="sc-geRwcS elybkM"><button class="sc-iLyTTZ hxuXLw"><div class="sc-gIdpPO iAFXuH"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt caGTwn notranslate sc-iBckCY lpjHkw css-1jgtvd5" aria-hidden="true" aria-label="Open Active Events dialog">auto_awesome_motion</span></div><p class="sc-folSZX sc-fOgFNk gZGcaN TnApT">View Active Events</p></button></div></div></nav><nav aria-label="Main menu, search and your account" class="sc-hYYjdK upiRv"><div class="sc-hKyxtL iJXvRg"><div class="sc-hZhKrD jzEBVF"><div class="sc-cHazmW hwbXxe"><button aria-label="Navigation menu" title="Navigation menu" class="sc-iBjNZB bGduwL google-symbols notranslate">menu</button></div><a href="#site-content" class="sc-dSDPUr ixAKjE">Skip to<br>content</a><div data-testid="kaggle-logo-wrapper" class="sc-Jclpx kOOdLY"><a href="https://www.kaggle.com/" aria-label="Return to Kaggle home page"><img src="Orbit%20Wars%20_%20Kaggle_files/site-logo.svg" alt="Kaggle" class="sc-tIyEa jALJjq"></a></div></div></div><div class="sc-edgaEG hnZKJM"><div class="sc-jlAnuY dNfdv"><div class="sc-hjYznJ hSlpsI"><div class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root sc-dkIoQT dLCgVn css-feqhe6"><div class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-adornedStart css-ipre3h"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt bpVxIz notranslate css-1jgtvd5" aria-hidden="true" style="margin-right: 8px;">search</span><input aria-invalid="false" autocomplete="off" id=":r3:" placeholder="Search" type="text" class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputAdornedStart css-iyhe1a"><fieldset aria-hidden="true" class="MuiOutlinedInput-notchedOutline css-nqlg3w"><legend class="css-ihdtdm"><span class="notranslate">​</span></legend></fieldset></div></div></div></div><div class="sc-iXaBKZ jujGnd"><div class="sc-fyzlkC gAkhdh"><div class="sc-iXuCAT OVKCZ"><div class="sc-kmYGLm hooIHD"><div class="sc-ZWrTk dOIWOs"></div><div class="sc-iIvZUO ebfLHz sc-gJaedx gwRoqn" aria-label="Do If Go Ox" role="button" tabindex="0"><div data-testid="avatar-image" style="background-image: url(&quot;https://storage.googleapis.com/kaggle-avatars/thumbnails/default-thumb.png&quot;);" title="Do If Go Ox" class="sc-gsdCXR hgbFAN"></div><svg width="32" height="32" viewBox="0 0 32 32"><circle r="15" cx="16" cy="16" fill="none" stroke-width="2" style="stroke: rgb(95, 99, 104);"></circle><circle r="15" cx="16" cy="16" fill="none" style="stroke: rgb(32, 190, 255);" stroke-width="2"></circle></svg></div></div></div></div></div></div></nav><div id="site-content" class="sc-cjeGuL jMjIyz legacy-less-dark-theme" role="main"><div class="sc-bAoahh ldSmbP"><div class="sc-bdDsCe dFEmqQ"><div data-nosnippet="true" class="sc-gtcBCx bhweIW">Kaggle uses cookies from Google to deliver and enhance the quality of its services and to analyze traffic.</div><div class="sc-dkXsAU ksVsmc"><a href="https://www.kaggle.com/cookies" class="sc-eCQgVK bupBOm"><div class="sc-hKVpXn dyMmab">Learn more</div></a><div class="sc-hKVpXn dyMmab">OK, Got it.</div></div></div></div><div><div data-testid="competition-detail-render-tid" class="sc-kNYukV bPXZrh competition"><div class="sc-hWJtyg hJoffe"><div height="1px" class="sc-byxCUD bWiWkW"></div><div class="sc-PLEmk bhdwOD"><div class="sc-fjjlBi bkWSkS"><a href="https://www.kaggle.com/organizations/kaggle" aria-label="Kaggle's profile" class="sc-iIvZUO bmYtZQ"><div data-testid="avatar-image" style="background-image: url(&quot;https://storage.googleapis.com/kaggle-organizations/4/thumbnail.png&quot;);" title="Kaggle" class="sc-gsdCXR hgbFAN"></div><svg width="32" height="32" viewBox="0 0 32 32"><circle r="15" cx="16" cy="16" fill="none" stroke-width="2" style="stroke: rgb(255, 255, 255);"></circle><circle r="15" cx="16" cy="16" fill="none" style="stroke: rgb(255, 255, 255);" stroke-width="2"></circle></svg></a><span style="flex: 1 1 0%; margin-left: 16px;"><span><span class="sc-bCgoVd hsZPdJ">Kaggle </span></span><span class="sc-bCgoVd hsZPdJ"> · Featured Simulation Competition · <span title="Wed Jun 24 2026 02:59:00 GMT+0300 (Москва, стандартное время)" aria-label="12 days to go">12 days to go</span></span></span></div><div wrap="hide" class="sc-LfXzs eMOVLC sc-jRqrrx dkqdPm"><div class="sc-iiuYfZ euqUVA"><h1 class="sc-kEbgWM sc-eyOrQj kIYlma aENKy">Orbit Wars</h1><span style="margin-bottom: 0px; max-width: unset;" class="sc-ieCSdj sc-gVSTOL jeARjD eQAKNi"><p class="sc-folSZX gZGcaN">Conquer planets rotating around a sun in continuous 2D space. A real-time strategy game for 2 or 4 players.</p></span></div><div style="align-self: unset;" wrap="hide" class="sc-ksvfsB hvYkbA"><div class="sc-hQlVYm kIFtmf"><img src="Orbit%20Wars%20_%20Kaggle_files/header.png" alt="" class="sc-bhlHvD sc-jBvEMk khNLoa fxZgCa"></div></div></div></div><div height="1px" class="sc-byxCUD bWiWkW"></div><div class="sc-BlSCl fWsExk"><div class="sc-PLEmk bhdwOD"><div style="border-left: 10px solid rgb(28, 29, 32); margin-left: -10px;" class="sc-ezjgmQ ljpvwh"><div class="sc-gNLSrG fSElua"><div class="sc-kmHjHX jwUrek"><h2 class="sc-dYjPD sc-lanHSw gXCMEy fPSQEA">Orbit Wars</h2><div class="sc-ftNwWt erPdUA"><div class="sc-bBwdJu fPHTbE"><button class="sc-ikBzZv cwWJbZ" tabindex="0" role="button"><span class="google-symbols notranslate MuiIcon-root MuiIcon-fontSizeMedium sc-bYgEKt knbXzI notranslate css-1jgtvd5" aria-hidden="true">chevron_right</span><span class="sc-dlwHGs cVnQIi">Play in Browser</span></button><div><button aria-disabled="false" class="sc-ikBzZv dtZZSK" tabindex="0" role="button"><span class="sc-dlwHGs cVnQIi">Submit Agent</span></button><div></div></div><span><button aria-label="Competition options menu collapsed" title="Competition Options" class="sc-iBjNZB ianyQQ google-symbols notranslate">more_horiz</button></span></div></div></div></div><div class="sc-djNpJR jeBfin"><div class="MuiTabs-root sc-fpGDfa lfxSSh sc-iXLZEi bTFyJt css-pc1mzd"><div style="width: 99px; height: 99px; position: absolute; top: -9999px; overflow: scroll;" class="MuiTabs-scrollableX MuiTabs-hideScrollbar css-oqr85h"></div><div class="MuiTabs-scroller MuiTabs-hideScrollbar MuiTabs-scrollableX css-12qnib" style="margin-bottom: 0px;"><div class="MuiTabs-flexContainer css-k008qs" role="tablist"><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary Mui-selected sc-dVDgeo hrGQkI css-1ewydek" tabindex="0" role="tab" aria-selected="true" aria-label="Overview, 1 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview" data-discover="true"><span class="sc-ieCSdj hbjmdl">Overview</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo hrGQkI css-1ewydek" tabindex="-1" role="tab" aria-selected="false" aria-label="Data, 2 of 9" href="https://www.kaggle.com/competitions/orbit-wars/data" data-discover="true"><span class="sc-ieCSdj jeARjD">Data</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo hrGQkI css-1ewydek" tabindex="-1" role="tab" aria-selected="false" aria-label="Code, 3 of 9" href="https://www.kaggle.com/competitions/orbit-wars/code" data-discover="true"><span class="sc-ieCSdj jeARjD">Code</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo hrGQkI css-1ewydek" tabindex="-1" role="tab" aria-selected="false" aria-label="Models, 4 of 9" href="https://www.kaggle.com/competitions/orbit-wars/models" data-discover="true"><span class="sc-ieCSdj jeARjD">Models</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo hrGQkI css-1ewydek" tabindex="-1" role="tab" aria-selected="false" aria-label="Discussion, 5 of 9" href="https://www.kaggle.com/competitions/orbit-wars/discussion" data-discover="true"><span class="sc-ieCSdj jeARjD">Discussion</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo hrGQkI css-1ewydek" tabindex="-1" role="tab" aria-selected="false" aria-label="Leaderboard, 6 of 9" href="https://www.kaggle.com/competitions/orbit-wars/leaderboard" data-discover="true"><span class="sc-ieCSdj jeARjD">Leaderboard</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo hrGQkI css-1ewydek" tabindex="-1" role="tab" aria-selected="false" aria-label="Rules, 7 of 9" href="https://www.kaggle.com/competitions/orbit-wars/rules" data-discover="true"><span class="sc-ieCSdj jeARjD">Rules</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo hrGQkI css-1ewydek" tabindex="-1" role="tab" aria-selected="false" aria-label="Team, 8 of 9" href="https://www.kaggle.com/competitions/orbit-wars/team" data-discover="true"><span class="sc-ieCSdj jeARjD">Team</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo hrGQkI css-1ewydek" tabindex="-1" role="tab" aria-selected="false" aria-label="Submissions, 9 of 9" href="https://www.kaggle.com/competitions/orbit-wars/submissions" data-discover="true"><span class="sc-ieCSdj jeARjD">Submissions</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a></div><span class="MuiTabs-indicator css-zn1p7a" style="left: 0px; width: 71.5333px;"></span></div></div></div></div></div><div role="separator" class="sc-khYboC dTnicw sc-jgzHYo cvdAlS sc-bPVBP cQPgXl"></div></div><div></div><div></div><div></div><div style="height: 40px;"></div><div class="sc-ixvNyY fZaXbE"><div id="abstract" class="sc-fpKPVN lkOHUw"><div class="sc-jPjRga kqlDkk"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h2 class="sc-iqkkDd sc-hozzqd csShwb jLgbP">Overview</h2></div></div></div><div class="sc-jKbHsU Ctclf"><div class="sc-dFBygw jHODdG sc-brYmaN fhiIdW"><p>The
+ goal of this competition is to create and/or train AI bots to play a 
+novel multi-agent 1v1 or 4p FFA game against other submitted agents. </p></div></div></div><div class="sc-cubLtd krdqAO"><div class="sc-kMtdzO gcRHSa"><div class="sc-jzzmRo ifuwnV sc-kbcqaQ glivyN"><div class="sc-grOpod pSGgH"><div class="sc-bLGhxS fmAiLi"><p style="margin-bottom: 4px;" class="sc-krVzYl dqazSr">Start</p><span class="sc-fKwzVe eLdVZL"><span title="Thu Apr 16 2026 22:01:30 GMT+0300 (Москва, стандартное время)" aria-label="2 months ago">2 months ago</span></span></div><div style="text-align: right;" class="sc-bLGhxS fmAiLi"><p style="margin-bottom: 4px;" class="sc-krVzYl dqazSr">Close</p><span class="sc-fKwzVe eLdVZL"><span title="Wed Jun 24 2026 02:59:00 GMT+0300 (Москва, стандартное время)" aria-label="12 days to go">12 days to go</span></span></div></div><div class="sc-cGihcx ivHGVb"><div class="sc-kYlCuE hYCpzf"></div><div class="sc-cupIhH gfuurL"></div><div class="sc-jiyEjs jCUSQN"><div class="sc-jTqTtD eyrcfm"></div></div><div class="sc-jiyEjs jtWXaE"><div class="sc-jTqTtD jDzMjW"></div></div><div class="sc-jiyEjs HKcAl"><div class="sc-jTqTtD hNDSIn"></div></div><div class="sc-jiyEjs hVEYvv"><div class="sc-jTqTtD blWyGm"></div><span class="sc-fKwzVe sc-gaNGGh eLdVZL cevmcX">Merger &amp; Entry</span></div></div></div></div></div></div><div class="sc-bVfqsd bLkCTo"><div id="description" class="sc-kniLKk"><div class="sc-efsgwo KlnPM sc-fxzRSe bbKGMP"><div class="sc-cTZdpT dZqWIt"><div id="Description" class="sc-czesdU fpSigF"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h3 class="sc-iqkkDd sc-lgGiis csShwb bRLVMl">Description</h3></div></div><button aria-label="Copy link" title="Copy link" class="sc-iBjNZB bGduwL google-symbols notranslate">link</button></div></div><button aria-label="Collapse " style="flex-shrink: 0;" title="Collapse " class="sc-iBjNZB bGduwL google-symbols notranslate" aria-expanded="true">keyboard_arrow_up</button></div><div><div class="sc-dcDveR bOjbFA"><div class="sc-dFBygw jHODdG"><p><strong>Welcome to Orbit Wars!</strong>
+ Command the fleet. Conquer the void. Orbit Wars resurrects the ruthless
+ strategy of the 2010 Planet Wars challenge with fresh, exciting 
+mechanics. Launch massive swarms of ships across the solar system, 
+outmaneuver your enemies, and claim absolute orbital supremacy.</p>
+<p><img src="Orbit%20Wars%20_%20Kaggle_files/inbox_50767_c09b79f4c324a1ad32dad0ef02df5918_orbit-wars-larg.gif" alt=""></p></div></div></div></div></div><div id="evaluation" class="sc-kniLKk"><div class="sc-efsgwo KlnPM sc-fxzRSe bbKGMP"><div class="sc-cTZdpT dZqWIt"><div id="Evaluation" class="sc-czesdU fpSigF"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h3 class="sc-iqkkDd sc-lgGiis csShwb bRLVMl">Evaluation</h3></div></div><button aria-label="Copy link" title="Copy link" class="sc-iBjNZB bGduwL google-symbols notranslate">link</button></div></div><button aria-label="Collapse " style="flex-shrink: 0;" title="Collapse " class="sc-iBjNZB bGduwL google-symbols notranslate" aria-expanded="true">keyboard_arrow_up</button></div><div><div class="sc-dcDveR bOjbFA"><div class="sc-dFBygw jHODdG"><p>Each
+ day your team is able to submit up to 5 agents (bots) to the 
+competition. Each submission will play Episodes (games) against other 
+bots on the ladder that have a similar skill rating. Over time skill 
+ratings will go up with wins or down with losses and evened out with 
+ties. To reduce the number of bots playing and increase the number of 
+episodes each team participates in, we only track the latest 2 
+submissions and use those for final submissions.</p>
+<p>Every bot submitted will continue to play episodes until the end of 
+the competition, with newer bots playing a much more frequent number of 
+episodes. On the leaderboard, only your best scoring bot will be shown, 
+but you can track the progress of all of your submissions on your 
+Submissions page.</p>
+<p>Each Submission has an estimated Skill Rating which is modeled by a 
+Gaussian N(μ,σ2) where μ is the estimated skill and σ represents the 
+uncertainty of that estimate which will decrease over time.</p>
+<p>When you upload a Submission, we first play a Validation Episode 
+where that Submission plays against copies of itself to make sure it 
+works properly. If the Episode fails, the Submission is marked as Error 
+and you can download the agent logs to help figure out why. Otherwise, 
+we initialize the Submission with μ0=600 and it joins the pool of All 
+Submissions for ongoing evaluation.</p>
+<p>We repeatedly run Episodes from the pool of All Submissions, and try 
+to pick Submissions with similar ratings for fair matches. Newly 
+submitted agents will be given an increased rate in the number of 
+episodes run to give you faster feedback.</p>
+<p><strong>Ranking System</strong> </p>
+<p>After an Episode finishes, we'll update the Rating estimate for all 
+Submissions in that Episode. If one Submission won, we'll increase its μ
+ and decrease its opponent's μ -- if the result was a draw, then we'll 
+move the two μ values closer towards their mean. The updates will have 
+magnitude relative to the deviation from the expected result based on 
+the previous μ values, and also relative to each Submission's 
+uncertainty σ. We also reduce the σ terms relative to the amount of 
+information gained by the result. The score by which your bot wins or 
+loses an Episode does not affect the skill rating updates.</p>
+<p><strong>Final Evaluation</strong>
+At the submission deadline on June 23, 2026, additional submissions will
+ be locked. From June 23, 2026 for approximately two weeks, we will 
+continue to run games. At the conclusion of this period, the leaderboard
+ is final.</p></div></div></div></div></div><div id="timeline" class="sc-kniLKk"><div class="sc-efsgwo KlnPM sc-fxzRSe bbKGMP"><div class="sc-cTZdpT dZqWIt"><div id="Timeline" class="sc-czesdU fpSigF"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h3 class="sc-iqkkDd sc-lgGiis csShwb bRLVMl">Timeline</h3></div></div><button aria-label="Copy link" title="Copy link" class="sc-iBjNZB bGduwL google-symbols notranslate">link</button></div></div><button aria-label="Collapse " style="flex-shrink: 0;" title="Collapse " class="sc-iBjNZB bGduwL google-symbols notranslate" aria-expanded="true">keyboard_arrow_up</button></div><div><div class="sc-dcDveR bOjbFA"><div class="sc-dFBygw jHODdG"><ul>
+<li><p><strong>April 16, 2026</strong> - Start Date.</p></li>
+<li><p><strong>June 16, 2026</strong> - Entry Deadline. You must accept the competition rules before this date in order to compete.</p></li>
+<li><p><strong>June 16, 2026</strong> - Team Merger Deadline. This is the last day participants may join or merge teams.</p></li>
+<li><p><strong>June 23, 2026</strong> - Final Submission Deadline.</p></li>
+<li><p><strong>June 24, 2026 to (approx) July 8, 2026</strong> - We will
+ continue to run games, or until the leaderboard has reached 
+convergence. At the conclusion of this period, the leaderboard is final.</p></li>
+</ul>
+<p>All deadlines are at 11:59 PM UTC on the corresponding day unless otherwise noted. <em>The competition organizers reserve the right to update the contest timeline if they deem it necessary.</em></p></div></div></div></div></div><div id="prizes" class="sc-kniLKk"><div class="sc-efsgwo KlnPM sc-fxzRSe bbKGMP"><div class="sc-cTZdpT dZqWIt"><div id="Prizes" class="sc-czesdU fpSigF"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h3 class="sc-iqkkDd sc-lgGiis csShwb bRLVMl">Prizes</h3></div></div><button aria-label="Copy link" title="Copy link" class="sc-iBjNZB bGduwL google-symbols notranslate">link</button></div></div><button aria-label="Collapse " style="flex-shrink: 0;" title="Collapse " class="sc-iBjNZB bGduwL google-symbols notranslate" aria-expanded="true">keyboard_arrow_up</button></div><div><div class="sc-dcDveR bOjbFA"><div class="sc-dFBygw jHODdG"><ul>
+<li>1st Place - $5,000</li>
+<li>2nd Place - $5,000</li>
+<li>3rd Place - $5,000</li>
+<li>4th Place - $5,000</li>
+<li>5th Place - $5,000</li>
+<li>6th Place - $5,000</li>
+<li>7th Place - $5,000</li>
+<li>8th Place - $5,000</li>
+<li>9th Place - $5,000</li>
+<li>10th Place - $5,000</li>
+</ul></div></div></div></div></div><div id="getting-started" class="sc-kniLKk"><div class="sc-efsgwo KlnPM sc-fxzRSe bbKGMP"><div class="sc-cTZdpT dZqWIt"><div id="Getting Started" class="sc-czesdU fpSigF"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h3 class="sc-iqkkDd sc-lgGiis csShwb bRLVMl">Getting Started</h3></div></div><button aria-label="Copy link" title="Copy link" class="sc-iBjNZB bGduwL google-symbols notranslate">link</button></div></div><button aria-label="Collapse " style="flex-shrink: 0;" title="Collapse " class="sc-iBjNZB bGduwL google-symbols notranslate" aria-expanded="true">keyboard_arrow_up</button></div><div><div class="sc-dcDveR bOjbFA"><div class="sc-dFBygw jHODdG"><p>All instructions in addition to the starter kits you need to start writing a bot and submit them to the competition are in the <a href="https://kaggle.com/competitions/orbit-wars/code" target="_blank" aria-label="starter kit (opens in a new tab)">starter kit</a>.</p>
+<p>Make sure to also read the competition specs below to learn how this year’s design works!</p></div></div></div></div></div><div id="how-to-play-orbit-wars" class="sc-kniLKk"><div class="sc-efsgwo KlnPM sc-fxzRSe bbKGMP"><div class="sc-cTZdpT dZqWIt"><div id="How to Play Orbit Wars" class="sc-czesdU fpSigF"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h3 class="sc-iqkkDd sc-lgGiis csShwb bRLVMl">How to Play Orbit Wars</h3></div></div><button aria-label="Copy link" title="Copy link" class="sc-iBjNZB bGduwL google-symbols notranslate">link</button></div></div><button aria-label="Collapse " style="flex-shrink: 0;" title="Collapse " class="sc-iBjNZB bGduwL google-symbols notranslate" aria-expanded="true">keyboard_arrow_up</button></div><div><div class="sc-dcDveR bOjbFA"><div class="sc-dFBygw jHODdG"><h2>Overview</h2>
+<p>Players start with a single home planet and compete to control the 
+map by sending fleets to capture neutral and enemy planets. The board is
+ a 100x100 continuous space with a sun at the center. Planets orbit the 
+sun, comets fly through on elliptical trajectories, and fleets travel in
+ straight lines. The game lasts 500 turns. The player with the most 
+total ships (on planets + in fleets) at the end wins.</p>
+<h2>Board Layout</h2>
+<ul>
+<li><strong>Board</strong>: 100x100 continuous space, origin at top-left.</li>
+<li><strong>Sun</strong>: Centered at (50, 50) with radius 10. Fleets that cross the sun are destroyed.</li>
+<li><strong>Symmetry</strong>: All planets and comets are placed with 4-fold mirror symmetry around the center: <code>(x, y), (100-x, y), (x, 100-y), (100-x, 100-y)</code>. This ensures fairness regardless of starting position.</li>
+</ul>
+<h2>Planets</h2>
+<p>Each planet is represented as <code>[id, owner, x, y, radius, ships, production]</code>.</p>
+<ul>
+<li><strong>owner</strong>: Player ID (0-3), or -1 for neutral.</li>
+<li><strong>radius</strong>: Determined by production: <code>1 + ln(production)</code>. Higher production planets are physically larger.</li>
+<li><strong>production</strong>: Integer from 1 to 5. Each turn, an owned planet generates this many ships.</li>
+<li><strong>ships</strong>: Current garrison. Starts between 5 and 99 (skewed toward lower values).</li>
+</ul>
+<h3>Planet Types</h3>
+<ul>
+<li><strong>Orbiting planets</strong>: Planets whose <code>orbital_radius + planet_radius &lt; 50</code> rotate around the sun at a constant angular velocity (0.025-0.05 radians/turn, randomized per game). Use <code>initial_planets</code> and <code>angular_velocity</code> from the observation to predict their positions.</li>
+<li><strong>Static planets</strong>: Planets further from the center do not rotate.</li>
+</ul>
+<p>The map contains 20-40 planets (5-10 symmetric groups of 4). At least
+ 3 groups are guaranteed to be static, and at least one group is 
+guaranteed to be orbiting.</p>
+<h3>Home Planets</h3>
+<p>One symmetric group is randomly chosen as the starting planets. In a 
+2-player game, players start on diagonally opposite planets (Q1 and Q4).
+ In a 4-player game, each player gets one planet from the group. Home 
+planets start with 10 ships.</p>
+<h2>Fleets</h2>
+<p>Each fleet is represented as <code>[id, owner, x, y, angle, from_planet_id, ships]</code>.</p>
+<ul>
+<li><strong>angle</strong>: Direction of travel in radians.</li>
+<li><strong>ships</strong>: Number of ships in the fleet (does not change during travel).</li>
+</ul>
+<h3>Fleet Speed</h3>
+<p>Fleet speed scales with size on a logarithmic curve:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-0" data-processing="yes" data-highlighted="yes" class="hljs language-apache"><span class="hljs-attribute">speed</span> = <span class="hljs-number">1</span>.<span class="hljs-number">0</span> + (maxSpeed - <span class="hljs-number">1</span>.<span class="hljs-number">0</span>) * (log(ships) / log(<span class="hljs-number">1000</span>)) ^ <span class="hljs-number">1</span>.<span class="hljs-number">5</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<ul>
+<li>1 ship moves at 1.0 units/turn.</li>
+<li>Larger fleets move faster, approaching the maximum speed (default 6.0).</li>
+<li>A fleet of ~500 ships moves at ~5, and ~1000 ships reaches the max.</li>
+</ul>
+<h3>Fleet Movement</h3>
+<p>Fleets travel in a straight line at their computed speed each turn. A fleet is removed if it:</p>
+<ul>
+<li>Goes out of bounds (leaves the 100x100 playing field).</li>
+<li>Crosses the sun (path segment comes within the sun's radius).</li>
+<li>Collides with any planet (path segment comes within the planet's radius). This triggers combat.</li>
+</ul>
+<p>Collision detection is continuous -- the entire path segment from old to new position is checked, not just the endpoint.</p>
+<h3>Fleet Launch</h3>
+<p>Each turn, your agent returns a list of moves: <code>[from_planet_id, direction_angle, num_ships]</code>.</p>
+<ul>
+<li>You can only launch from planets you own.</li>
+<li>You cannot launch more ships than the planet currently has.</li>
+<li>The fleet spawns just outside the planet's radius in the given direction.</li>
+<li>You can issue multiple launches from the same or different planets in a single turn.</li>
+</ul>
+<h2>Comets</h2>
+<p>Comets are temporary extra-solar objects that fly through the board 
+on highly elliptical orbits around the sun. They spawn in groups of 4 
+(one per quadrant) at steps 50, 150, 250, 350, and 450.</p>
+<ul>
+<li><strong>Radius</strong>: 1.0 (fixed).</li>
+<li><strong>Production</strong>: 1 ship/turn when owned.</li>
+<li><strong>Starting ships</strong>: Random, skewed low (minimum of 4 rolls from 1-99). All 4 comets in a group share the same starting ship count.</li>
+<li><strong>Speed</strong>: Configurable via <code>cometSpeed</code> (default 4.0 units/turn).</li>
+<li><strong>Identification</strong>: Check <code>comet_planet_ids</code> in the observation to see which planet IDs are comets. Comets also appear in the <code>planets</code> array and follow all normal planet rules (capture, production, fleet launch, combat).</li>
+</ul>
+<p>When a comet leaves the board, it is removed along with any ships 
+garrisoned on it. Comets are removed before fleet launches each turn, so
+ you cannot launch from a departing comet.</p>
+<p>The <code>comets</code> observation field contains comet group data including <code>paths</code> (the full trajectory for each comet) and <code>path_index</code> (current position along the path), which can be used to predict future comet positions.</p>
+<h2>Turn Order</h2>
+<p>Each turn executes in this order:</p>
+<ol>
+<li><strong>Comet expiration</strong>: Remove comets that have left the board.</li>
+<li><strong>Comet spawning</strong>: Spawn new comet groups at designated steps.</li>
+<li><strong>Fleet launch</strong>: Process all player actions, creating new fleets.</li>
+<li><strong>Production</strong>: All owned planets (including comets) generate ships.</li>
+<li><strong>Fleet movement</strong>: Move all fleets along their 
+headings. Check for out-of-bounds, sun collision, and planet collision. 
+Fleets that hit planets are queued for combat.</li>
+<li><strong>Planet rotation &amp; comet movement</strong>: Orbiting 
+planets rotate, comets advance along their paths. Any fleet caught by a 
+moving planet/comet is swept into combat with it.</li>
+<li><strong>Combat resolution</strong>: Resolve all queued planet combats.</li>
+</ol>
+<h2>Combat</h2>
+<p>When one or more fleets collide with a planet (either by flying into it or being swept by a moving planet), combat is resolved:</p>
+<ol>
+<li>All arriving fleets are grouped by owner. Ships from the same owner are summed.</li>
+<li>The largest attacking force fights the second largest. The difference in ships survives.</li>
+<li>If there is a surviving attacker:<ul>
+<li>If the attacker is the same owner as the planet, the surviving ships are added to the garrison.</li>
+<li>If the attacker is a different owner, the surviving ships fight the 
+garrison. If the attackers exceed the garrison, the planet changes 
+ownership and the garrison becomes the surplus.</li></ul></li>
+<li>If two attackers tie, all attacking ships are destroyed (no survivors).</li>
+</ol>
+<h2>Scoring and Termination</h2>
+<p>The game ends when:</p>
+<ul>
+<li><strong>Step limit reached</strong>: 500 turns.</li>
+<li><strong>Elimination</strong>: Only one player (or zero) remains with any planets or fleets.</li>
+</ul>
+<p>Final score = total ships on owned planets + total ships in owned fleets. Highest score wins.</p>
+<h2>Observation Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>planets</code></td>
+<td><code>[[id, owner, x, y, radius, ships, production], ...]</code></td>
+<td>All planets including comets</td>
+</tr>
+<tr>
+<td><code>fleets</code></td>
+<td><code>[[id, owner, x, y, angle, from_planet_id, ships], ...]</code></td>
+<td>All active fleets</td>
+</tr>
+<tr>
+<td><code>player</code></td>
+<td><code>int</code></td>
+<td>Your player ID (0-3)</td>
+</tr>
+<tr>
+<td><code>angular_velocity</code></td>
+<td><code>float</code></td>
+<td>Planet rotation speed (radians/turn)</td>
+</tr>
+<tr>
+<td><code>initial_planets</code></td>
+<td><code>[[id, owner, x, y, radius, ships, production], ...]</code></td>
+<td>Planet positions at game start</td>
+</tr>
+<tr>
+<td><code>comets</code></td>
+<td><code>[{planet_ids, paths, path_index}, ...]</code></td>
+<td>Active comet group data</td>
+</tr>
+<tr>
+<td><code>comet_planet_ids</code></td>
+<td><code>[int, ...]</code></td>
+<td>Planet IDs that are comets</td>
+</tr>
+<tr>
+<td><code>remainingOverageTime</code></td>
+<td><code>float</code></td>
+<td>Remaining overage time budget (seconds)</td>
+</tr>
+</tbody>
+</table>
+<h2>Action Format</h2>
+<p>Return a list of moves:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-1" data-processing="yes" data-highlighted="yes" class="hljs language-inform7"><span class="hljs-comment">[<span class="hljs-comment">[from_planet_id, direction_angle, num_ships]</span>, ...]</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<ul>
+<li><code>from_planet_id</code>: ID of a planet you own.</li>
+<li><code>direction_angle</code>: Angle in radians (0 = right, pi/2 = down).</li>
+<li><code>num_ships</code>: Integer number of ships to send.</li>
+</ul>
+<p>Return an empty list <code>[]</code> to take no action.</p>
+<h2>Agent Convenience</h2>
+<p>The module exports named tuples for easier field access:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-2" data-processing="yes" data-highlighted="yes" class="hljs language-routeros"><span class="hljs-keyword">from</span> kaggle_environments.envs.orbit_wars.orbit_wars import Planet, Fleet, CENTER, ROTATION_RADIUS_LIMIT
+
+def agent(obs):
+    planets = [Planet(*p) <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> obs.<span class="hljs-built_in">get</span>(<span class="hljs-string">"planets"</span>, [])]
+    fleets = [Fleet(<span class="hljs-number">*f</span>) <span class="hljs-keyword">for</span> f <span class="hljs-keyword">in</span> obs.<span class="hljs-built_in">get</span>(<span class="hljs-string">"fleets"</span>, [])]
+    player = obs.<span class="hljs-built_in">get</span>(<span class="hljs-string">"player"</span>, 0)
+
+    <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> planets:
+        <span class="hljs-built_in">print</span>(p.id, p.owner, p.x, p.y, p.radius, p.ships, p.production)
+
+    return []  # list of [from_planet_id, angle, num_ships]
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Configuration</h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>episodeSteps</code></td>
+<td>500</td>
+<td>Maximum number of turns</td>
+</tr>
+<tr>
+<td><code>actTimeout</code></td>
+<td>1</td>
+<td>Seconds per turn</td>
+</tr>
+<tr>
+<td><code>shipSpeed</code></td>
+<td>6.0</td>
+<td>Maximum fleet speed</td>
+</tr>
+<tr>
+<td><code>sunRadius</code></td>
+<td>10.0</td>
+<td>Radius of the sun</td>
+</tr>
+<tr>
+<td><code>boardSize</code></td>
+<td>100.0</td>
+<td>Board dimensions</td>
+</tr>
+<tr>
+<td><code>cometSpeed</code></td>
+<td>4.0</td>
+<td>Comet speed (units/turn)</td>
+</tr>
+</tbody>
+</table></div></div></div></div></div><div id="agents-md" class="sc-kniLKk"><div class="sc-efsgwo KlnPM sc-fxzRSe bbKGMP"><div class="sc-cTZdpT dZqWIt"><div id="AGENTS.md" class="sc-czesdU fpSigF"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h3 class="sc-iqkkDd sc-lgGiis csShwb bRLVMl">AGENTS.md</h3></div></div><button aria-label="Copy link" title="Copy link" class="sc-iBjNZB bGduwL google-symbols notranslate">link</button></div></div><button aria-label="Collapse " style="flex-shrink: 0;" title="Collapse " class="sc-iBjNZB bGduwL google-symbols notranslate" aria-expanded="true">keyboard_arrow_up</button></div><div><div class="sc-dcDveR bOjbFA"><div class="sc-dFBygw jHODdG"><h1>Orbit Wars: Getting Started</h1>
+<p>This guide walks you through building an agent, testing it locally, and submitting it to the Orbit Wars competition on Kaggle.</p>
+<h2>Game Overview</h2>
+<p>Orbit Wars is a real-time strategy game on a 100x100 board with a sun
+ at the center. Players conquer planets by sending fleets of ships 
+between them.</p>
+<ul>
+<li><strong>Planets</strong> produce ships each turn (proportional to their radius)</li>
+<li><strong>Inner planets</strong> rotate around the central sun; outer planets are static</li>
+<li><strong>Fleets</strong> fly in straight lines at a given angle from their source planet</li>
+<li><strong>Fleet speed</strong> scales with fleet size (1 ship = 1/turn, larger fleets up to 6/turn)</li>
+<li><strong>Combat</strong>: arriving fleet ships are subtracted from the planet's garrison. If the garrison drops below 0, ownership flips</li>
+<li><strong>Sun</strong>: fleets that hit the sun are destroyed</li>
+<li><strong>Comets</strong>: temporary planets that fly through the board on elliptical paths</li>
+<li><strong>Win condition</strong>: highest ship count (planets + fleets) when time runs out, or last player standing</li>
+</ul>
+<p>See How to Play Orbit Wars for full rules and configuration defaults.</p>
+<h2>Your Agent</h2>
+<p>Your agent is a function that receives an observation and returns a list of moves.</p>
+<p><strong>Observation fields:</strong></p>
+<ul>
+<li><code>player</code> — your player ID (0-3)</li>
+<li><code>planets</code> — list of <code>[id, owner, x, y, radius, ships, production]</code> (owner -1 = neutral)</li>
+<li><code>fleets</code> — list of <code>[id, owner, x, y, angle, from_planet_id, ships]</code></li>
+<li><code>angular_velocity</code> — rotation speed of inner planets (radians/turn)</li>
+</ul>
+<p><strong>Action format:</strong>
+Each move is <code>[from_planet_id, angle_in_radians, num_ships]</code>.</p>
+<p><strong>Example — Nearest Planet Sniper:</strong></p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-0" data-processing="yes" data-highlighted="yes" class="hljs language-python"><span class="hljs-keyword">import</span> math
+<span class="hljs-keyword">from</span> kaggle_environments.envs.orbit_wars.orbit_wars <span class="hljs-keyword">import</span> Planet
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">agent</span>(<span class="hljs-params">obs</span>):
+    moves = []
+    player = obs.get(<span class="hljs-string">"player"</span>, <span class="hljs-number">0</span>) <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(obs, <span class="hljs-built_in">dict</span>) <span class="hljs-keyword">else</span> obs.player
+    raw_planets = obs.get(<span class="hljs-string">"planets"</span>, []) <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(obs, <span class="hljs-built_in">dict</span>) <span class="hljs-keyword">else</span> obs.planets
+    planets = [Planet(*p) <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> raw_planets]
+
+    my_planets = [p <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> planets <span class="hljs-keyword">if</span> p.owner == player]
+    targets = [p <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> planets <span class="hljs-keyword">if</span> p.owner != player]
+
+    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> targets:
+        <span class="hljs-keyword">return</span> moves
+
+    <span class="hljs-keyword">for</span> mine <span class="hljs-keyword">in</span> my_planets:
+        <span class="hljs-comment"># Find nearest planet we don't own</span>
+        nearest = <span class="hljs-built_in">min</span>(targets, key=<span class="hljs-keyword">lambda</span> t: math.hypot(mine.x - t.x, mine.y - t.y))
+
+        <span class="hljs-comment"># Send exactly enough ships to capture it</span>
+        ships_needed = nearest.ships + <span class="hljs-number">1</span>
+        <span class="hljs-keyword">if</span> mine.ships &gt;= ships_needed:
+            angle = math.atan2(nearest.y - mine.y, nearest.x - mine.x)
+            moves.append([mine.<span class="hljs-built_in">id</span>, angle, ships_needed])
+
+    <span class="hljs-keyword">return</span> moves
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Test Locally</h2>
+<p>Install the environment from PyPI (Orbit Wars requires version 1.28.0 or later):</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-1" data-processing="yes" data-highlighted="yes" class="hljs language-cmake">pip <span class="hljs-keyword">install</span> <span class="hljs-string">"kaggle-environments&gt;=1.28.0"</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<p>Run a game from Python or a notebook:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-2" data-processing="yes" data-highlighted="yes" class="hljs language-routeros"><span class="hljs-keyword">from</span> kaggle_environments import make
+
+env = make(<span class="hljs-string">"orbit_wars"</span>, configuration={<span class="hljs-string">"seed"</span>: 42}, <span class="hljs-attribute">debug</span>=<span class="hljs-literal">True</span>)
+env.<span class="hljs-built_in">run</span>([<span class="hljs-string">"main.py"</span>, <span class="hljs-string">"random"</span>])
+
+<span class="hljs-comment"># View result</span>
+final = env.steps[-1]
+<span class="hljs-keyword">for</span> i, s <span class="hljs-keyword">in</span> enumerate(final):
+    <span class="hljs-built_in">print</span>(f<span class="hljs-string">"Player {i}: reward={s.reward}, status={s.status}"</span>)
+
+<span class="hljs-comment"># Render in a notebook</span>
+env.render(<span class="hljs-attribute">mode</span>=<span class="hljs-string">"ipython"</span>, <span class="hljs-attribute">width</span>=800, <span class="hljs-attribute">height</span>=600)
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Set Up the Kaggle CLI</h2>
+<p>Install the CLI:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-3" data-processing="yes" data-highlighted="yes" class="hljs language-cmake">pip <span class="hljs-keyword">install</span> kaggle
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<p>You'll need a Kaggle account — sign up at <a href="https://www.kaggle.com/" target="_blank" aria-label="https://www.kaggle.com (opens in a new tab)">https://www.kaggle.com</a> if you don't have one. Then download your API credentials at <a href="https://www.kaggle.com/settings/api" target="_blank" aria-label="https://www.kaggle.com/settings/api (opens in a new tab)">https://www.kaggle.com/settings/api</a> by clicking <strong>"Generate New Token"</strong> under the "API" section.</p>
+<p><strong>Recommended: API token file.</strong> Save the token string to <code>~/.kaggle/access_token</code>:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-4" data-processing="yes" data-highlighted="yes" class="hljs language-bash"><span class="hljs-built_in">mkdir</span> -p ~/.kaggle
+<span class="hljs-comment"># Paste the token from the Kaggle settings UI into this file</span>
+nano ~/.kaggle/access_token
+<span class="hljs-built_in">chmod</span> 600 ~/.kaggle/access_token
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<p>Alternative auth methods:</p>
+<ul>
+<li><strong>OAuth (browser flow):</strong> <code>kaggle auth login</code></li>
+<li><strong>Environment variable:</strong> <code>export KAGGLE_API_TOKEN=xxxxxxxxxxxxxx</code></li>
+</ul>
+<p>Verify the CLI is wired up:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-5" data-processing="yes" data-highlighted="yes" class="hljs language-lsl">kaggle competitions <span class="hljs-type">list</span> -s <span class="hljs-string">"orbit wars"</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Find the Competition</h2>
+<pre class="uc-code-block"><code id="code-block-1781195530071-6" data-processing="yes" data-highlighted="yes" class="hljs language-maxima">kaggle competitions list -s <span class="hljs-string">"orbit wars"</span>
+kaggle competitions pages <span class="hljs-built_in">orbit</span>-wars
+kaggle competitions pages <span class="hljs-built_in">orbit</span>-wars --<span class="hljs-built_in">content</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Accept the Competition Rules</h2>
+<p>Before submitting, you <strong>must</strong> accept the rules on the Kaggle website. Navigate to <code>https://www.kaggle.com/competitions/orbit-wars</code> and click <strong>"Join Competition"</strong>.</p>
+<p>Verify you've joined:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-7" data-processing="yes" data-highlighted="yes" class="hljs language-crmsh">kaggle competitions list --<span class="hljs-keyword">group</span> <span class="hljs-title">entered</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Download Competition Data</h2>
+<pre class="uc-code-block"><code id="code-block-1781195530071-8" data-processing="yes" data-highlighted="yes" class="hljs language-haskell"><span class="hljs-title">kaggle</span> competitions download orbit-wars -p orbit-wars-<span class="hljs-class"><span class="hljs-keyword">data</span></span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Submit Your Agent</h2>
+<p>Your submission must have a <code>main.py</code> at the root with an <code>agent</code> function.</p>
+<p><strong>Single file agent:</strong></p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-9" data-processing="yes" data-highlighted="yes" class="hljs language-mipsasm">kaggle competitions <span class="hljs-keyword">submit </span><span class="hljs-keyword">orbit-wars </span>-f main.py -m <span class="hljs-string">"Nearest planet sniper v1"</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<p><strong>Multi-file agent</strong> — bundle into a tar.gz with <code>main.py</code> at the root:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-10" data-processing="yes" data-highlighted="yes" class="hljs language-stylus">tar -czf submission<span class="hljs-selector-class">.tar</span><span class="hljs-selector-class">.gz</span> <span class="hljs-selector-tag">main</span><span class="hljs-selector-class">.py</span> helper<span class="hljs-selector-class">.py</span> model_weights<span class="hljs-selector-class">.pkl</span>
+kaggle competitions submit orbit-wars -f submission<span class="hljs-selector-class">.tar</span><span class="hljs-selector-class">.gz</span> -m <span class="hljs-string">"Multi-file agent v1"</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<p><strong>Notebook submission:</strong></p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-11" data-processing="yes" data-highlighted="yes" class="hljs language-maxima">kaggle competitions submit <span class="hljs-built_in">orbit</span>-wars -k YOUR_USERNAME/<span class="hljs-built_in">orbit</span>-wars-agent -f submission.tar.gz -v <span class="hljs-number">1</span> -m <span class="hljs-string">"Notebook agent v1"</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Monitor Your Submission</h2>
+<p>Check submission status:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-12" data-processing="yes" data-highlighted="yes" class="hljs language-mipsasm">kaggle competitions <span class="hljs-keyword">submissions </span><span class="hljs-keyword">orbit-wars
+</span></code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<p>Note the submission ID from the output — you'll need it for episodes.</p>
+<h2>List Episodes</h2>
+<p>Once your submission has played some games:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-13" data-processing="yes" data-highlighted="yes" class="hljs language-xml">kaggle competitions episodes <span class="hljs-tag">&lt;<span class="hljs-name">SUBMISSION_ID</span>&gt;</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<p>CSV output for scripting:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-14" data-processing="yes" data-highlighted="yes" class="hljs language-xml">kaggle competitions episodes <span class="hljs-tag">&lt;<span class="hljs-name">SUBMISSION_ID</span>&gt;</span> -v
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Download Replays and Logs</h2>
+<p>Download the replay JSON for an episode (for visualization or analysis):</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-15" data-processing="yes" data-highlighted="yes" class="hljs language-nix">kaggle competitions replay <span class="hljs-symbol">&lt;EPISODE_ID&gt;</span>
+kaggle competitions replay <span class="hljs-symbol">&lt;EPISODE_ID&gt;</span> <span class="hljs-operator">-</span>p <span class="hljs-symbol">./replays</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<p>Download agent logs to debug your agent's behavior:</p>
+<pre class="uc-code-block"><code id="code-block-1781195530071-16" data-processing="yes" data-highlighted="yes" class="hljs language-nix"><span class="hljs-comment"># Logs for the first agent (index 0)</span>
+kaggle competitions logs <span class="hljs-symbol">&lt;EPISODE_ID&gt;</span> <span class="hljs-number">0</span>
+
+<span class="hljs-comment"># Logs for the second agent (index 1)</span>
+kaggle competitions logs <span class="hljs-symbol">&lt;EPISODE_ID&gt;</span> <span class="hljs-number">1</span> <span class="hljs-operator">-</span>p <span class="hljs-symbol">./logs</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Check the Leaderboard</h2>
+<pre class="uc-code-block"><code id="code-block-1781195530071-17" data-processing="yes" data-highlighted="yes" class="hljs language-ebnf"><span class="hljs-attribute">kaggle competitions leaderboard orbit-wars -s</span>
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre>
+<h2>Typical Workflow</h2>
+<pre class="uc-code-block"><code id="code-block-1781195530071-18" data-processing="yes" data-highlighted="yes" class="hljs language-vim"># Test locally
+<span class="hljs-keyword">python</span> -<span class="hljs-keyword">c</span> <span class="hljs-comment">"</span>
+from kaggle_environments import <span class="hljs-keyword">make</span>
+env = <span class="hljs-keyword">make</span>(<span class="hljs-string">'orbit_wars'</span>, <span class="hljs-keyword">debug</span>=True)
+env.run([<span class="hljs-string">'main.py'</span>, <span class="hljs-string">'random'</span>])
+<span class="hljs-keyword">print</span>([(i, s.reward) <span class="hljs-keyword">for</span> i, s in enumerate(env.steps[-<span class="hljs-number">1</span>])])
+<span class="hljs-comment">"</span>
+
+# Submit
+kaggle competitions submit orbit-wars -<span class="hljs-keyword">f</span> main.<span class="hljs-keyword">py</span> -<span class="hljs-keyword">m</span> <span class="hljs-string">"v1"</span>
+
+# Check status
+kaggle competitions submissions orbit-wars
+
+# Review episodes
+kaggle competitions episodes <span class="hljs-symbol">&lt;SUBMISSION_ID&gt;</span>
+
+# Download replay <span class="hljs-built_in">and</span> logs
+kaggle competitions replay <span class="hljs-symbol">&lt;EPISODE_ID&gt;</span>
+kaggle competitions logs <span class="hljs-symbol">&lt;EPISODE_ID&gt;</span> <span class="hljs-number">0</span>
+
+# Check leaderboard
+kaggle competitions leaderboard orbit-wars -s
+</code><div class="uc-code-block-copy-button-wrapper"><button aria-label="Copy code" class="uc-code-block-copy-button google-symbols">content_copy</button></div></pre></div></div></div></div></div><div id="citation" class="sc-bJmRxn"><div style="border-top: 0px; border-bottom: 0px;" class="sc-efsgwo KlnPM"><div class="sc-cTZdpT dZqWIt"><div id="citation" class="sc-czesdU fpSigF"><div class="sc-hUxjbq kfDPZz"><div class="sc-fJhHEt bxzGtZ"><div class="sc-cRSGRE bjhwTM"><h3 class="sc-iqkkDd sc-lgGiis csShwb bRLVMl">Citation</h3></div></div><button aria-label="Copy link" title="Copy link" class="sc-iBjNZB bGduwL google-symbols notranslate">link</button></div></div><button aria-label="Collapse Citation" style="flex-shrink: 0;" title="Collapse Citation" class="sc-iBjNZB bGduwL google-symbols notranslate" aria-expanded="true">keyboard_arrow_up</button></div><div><div class="sc-kwIzlc iAUiYX"><p class="sc-fFCZOx sc-kQAfNr bPqiLa lezcNZ">Bovard Doerschuk-Tiberi, Walter Reade, and Addison Howard. Orbit Wars. https://kaggle.com/competitions/orbit-wars, 2026. Kaggle.</p><button style="flex-shrink: 0;" class="sc-ikBzZv cDXPOc" tabindex="0" role="button"><span class="sc-dlwHGs cVnQIi">Cite</span></button><div></div></div></div></div></div></div><div></div><div class="sc-kbqmPu bTKHWm"><div><div class="sc-kfxpcX cRYuqh"><div class="sc-kkCdBI fAQEMs"><h2 style="margin-bottom: 4px;" class="sc-krVzYl dqazSr">Competition Host</h2><p class="sc-fFCZOx iZNPId">Kaggle</p></div><div class="sc-hcRfYx"><a href="https://www.kaggle.com/organizations/kaggle" aria-label="Kaggle's profile" class="sc-iIvZUO bmYtZQ"><div data-testid="avatar-image" style="background-image: url(&quot;https://storage.googleapis.com/kaggle-organizations/4/thumbnail.png&quot;);" title="Kaggle" class="sc-gsdCXR kQeKXR"></div><svg width="48" height="48" viewBox="0 0 48 48"><circle r="22.5" cx="24" cy="24" fill="none" stroke-width="3" style="stroke: rgb(255, 255, 255);"></circle><circle r="22.5" cx="24" cy="24" fill="none" style="stroke: rgb(255, 255, 255);" stroke-width="3"></circle></svg></a></div></div><div class="sc-kfxpcX cRYuqh"><div class="sc-kkCdBI fAQEMs"><h2 style="margin-bottom: 4px;" class="sc-krVzYl dqazSr">Prizes &amp; Awards</h2><div style="display: flex; flex-direction: column;"><div style="display: flex; flex-direction: row;"><p style="padding-right: 4px;" class="sc-fFCZOx iZNPId">$50,000</p></div><p class="sc-fFCZOx iZNPId">Awards Points &amp; Medals</p></div></div></div><div class="sc-kfxpcX cRYuqh"><div class="sc-kkCdBI fAQEMs"><h2 style="margin-bottom: 4px;" class="sc-krVzYl dqazSr">Participation</h2><p class="sc-fFCZOx iZNPId">9,640 Entrants</p><p class="sc-fFCZOx iZNPId">4,627 Participants</p><p class="sc-fFCZOx iZNPId">4,286 Teams</p><p class="sc-fFCZOx iZNPId">8,141 Submissions</p></div></div><div class="sc-kfxpcX cRYuqh"><div class="sc-kkCdBI fAQEMs"><h2 style="margin-bottom: 4px;" class="sc-krVzYl dqazSr">Tags</h2><div style="margin-top: 12px;"><div class="sc-eZlXxa kDknRl sc-czxEME hRPBcS" id="combo-tags-menu-chipset" role="group" aria-label="Tags"><a href="https://www.kaggle.com/competitions?tagIds=2500-Games" target="_blank" class="sc-hKTdcF jBjTSL" style="cursor: pointer; margin-right: 0px;" role="link" aria-label="Games opens in new window"><span class="sc-dILkzW sc-fSLNDe khMpKs hlQWGR">Games</span></a><a href="https://www.kaggle.com/competitions?tagIds=12101-Artificial+Intelligence" target="_blank" class="sc-hKTdcF jBjTSL" style="cursor: pointer; margin-right: 0px;" role="link" aria-label="Artificial Intelligence opens in new window"><span class="sc-dILkzW sc-fSLNDe khMpKs hlQWGR">Artificial Intelligence</span></a><a href="https://www.kaggle.com/competitions?tagIds=13313-Reinforcement+Learning" target="_blank" class="sc-hKTdcF jBjTSL" style="cursor: pointer; margin-right: 0px;" role="link" aria-label="Reinforcement Learning opens in new window"><span class="sc-dILkzW sc-fSLNDe khMpKs hlQWGR">Reinforcement Learning</span></a><div class="sc-hKTdcF jBjTSL" style="cursor: pointer; margin-right: 0px;" role="presentation" aria-label="Custom Metric opens in new window"><span class="sc-dILkzW sc-fSLNDe khMpKs hlQWGR">Custom Metric</span></div></div></div></div></div></div><aside class="sc-kEtKdX khwhpW"><div class="sc-cwIYim kuCxWU"><div font-weight="bold" class="sc-hCcPtG hBqzJZ">Table of Contents</div><button aria-label="Collapse all sections" title="Collapse all sections" class="sc-iBjNZB ianyQQ google-symbols notranslate">collapse_all</button></div><div class="MuiTabs-root MuiTabs-vertical sc-fpGDfa bzlVus css-6hrzpk"><div style="width: 99px; height: 99px; position: absolute; top: -9999px; overflow: scroll;" class="MuiTabs-hideScrollbar css-oqr85h"></div><div class="MuiTabs-scroller MuiTabs-hideScrollbar MuiTabs-scrollableY css-ccrt04" style="margin-right: 0px;"><div aria-orientation="vertical" class="MuiTabs-flexContainer MuiTabs-flexContainerVertical css-j7qwjs" role="tablist"><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo kJqiVE css-1ewydek" tabindex="-1" role="tab" aria-selected="false" id="680096" aria-label="Overview, 1 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/abstract" data-discover="true"><span class="sc-ieCSdj jeARjD">Overview</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo kJqiVE css-1ewydek" tabindex="-1" role="tab" aria-selected="false" id="680093" aria-label="Description, 2 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/description" data-discover="true"><span class="sc-ieCSdj jeARjD">Description</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo kJqiVE css-1ewydek" tabindex="-1" role="tab" aria-selected="false" id="680094" aria-label="Evaluation, 3 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/evaluation" data-discover="true"><span class="sc-ieCSdj jeARjD">Evaluation</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo kJqiVE css-1ewydek" tabindex="-1" role="tab" aria-selected="false" id="680097" aria-label="Timeline, 4 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/timeline" data-discover="true"><span class="sc-ieCSdj jeARjD">Timeline</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo kJqiVE css-1ewydek" tabindex="-1" role="tab" aria-selected="false" id="681009" aria-label="Prizes, 5 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/prizes" data-discover="true"><span class="sc-ieCSdj jeARjD">Prizes</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo kJqiVE css-1ewydek" tabindex="-1" role="tab" aria-selected="false" id="680099" aria-label="Getting Started, 6 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/getting-started" data-discover="true"><span class="sc-ieCSdj jeARjD">Getting Started</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary Mui-selected sc-dVDgeo kJqiVE css-1ewydek" tabindex="0" role="tab" aria-selected="true" id="680098" aria-label="How to Play Orbit Wars, 7 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/how-to-play-orbit-wars" data-discover="true"><span class="sc-ieCSdj hbjmdl">How to Play Orbit Wars</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo kJqiVE css-1ewydek" tabindex="-1" role="tab" aria-selected="false" id="695410" aria-label="AGENTS.md, 8 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/agents-md" data-discover="true"><span class="sc-ieCSdj jeARjD">AGENTS.md</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a><a class="MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary sc-dVDgeo kJqiVE css-1ewydek" tabindex="-1" role="tab" aria-selected="false" id="99999" aria-label="Citation, 9 of 9" href="https://www.kaggle.com/competitions/orbit-wars/overview/citation" data-discover="true"><span class="sc-ieCSdj jeARjD">Citation</span><span class="MuiTouchRipple-root css-w0pj6f"></span></a></div><span class="MuiTabs-indicator css-1phc0gu" style="top: 216px; height: 20px;"></span></div></div></aside></div></div></div></div></div><div id="nav-footer" class="sc-jYuITo hZRBvh"></div></div><div aria-live="polite" aria-atomic="true" role="alert" class="sc-kJxzDI CyFoG"></div></div>
+
+
+</body></html>

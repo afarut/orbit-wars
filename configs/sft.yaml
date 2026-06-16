@@ -1,0 +1,13 @@
+# Корневой конфиг SFT-обучения Orbit Wars (Hydra).
+# Группы: model / data / train. Оверрайд из CLI, напр.:
+#   python -m sft.train train.batch_size=512 data.w_hold=0.05
+defaults:
+  - model: policy_value
+  - data: full_send
+  - train: default
+  - _self_
+
+# вывод hydra складываем рядом с чекпойнтами по дате запуска
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d_%H-%M-%S}

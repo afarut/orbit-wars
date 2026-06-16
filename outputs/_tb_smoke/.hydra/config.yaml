@@ -1,0 +1,34 @@
+model:
+  d_model: 128
+  d_k: 64
+  n_layers: 2
+  n_heads: 4
+  ffn: 512
+  dropout: 0.0
+  enc_hidden: 128
+  head_hidden: 128
+data:
+  path: data/sft.full_send.jsonl
+  val_frac: 0.02
+  num_workers: 0
+  seed: 0
+  limit: 3000
+  w_hold: 0.074
+  hold_subsample: 1.0
+  max_planets: 40
+  max_comets: 16
+  max_fleets: 256
+train:
+  batch_size: 64
+  epochs: 1
+  lr: 0.0003
+  weight_decay: 0.01
+  warmup_steps: 500
+  grad_clip: 1.0
+  amp: true
+  log_every: 5
+  value_weight: 0.0
+  ckpt_dir: checkpoints
+  save_each_epoch: true
+  tensorboard: true
+  tb_dir: tb
