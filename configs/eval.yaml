@@ -1,0 +1,47 @@
+# Корневой конфиг локального турнира Orbit Wars (Hydra).
+#
+# Агенты живут по одному в файле в группе `agent` (configs/agent/*.yaml) и собираются
+# в каталог `catalog`. Что гонять — список ИМЁН `roster` (просто «флажки»):
+#   python -m eval.run roster=[best, sniper, hold]
+# Готовые пресеты ростера — группа `pool` (configs/pool/*.yaml):
+#   python -m eval.run pool=scripted
+# Чекпойнты берут путь из общего `ckpt_dir` (нужен, только если в ростере есть чекпойнт):
+#   python -m eval.run pool=checkpoints ckpt_dir=outputs/<ts>/checkpoints
+# Разные прогоны в одном турнире — задай ad-hoc чекпойнты по имени через `ckpts` (имя из
+# ростера, которого нет в каталоге, ищется здесь; значение — путь либо {ckpt, decode, temperature}):
+#   python -m eval.run roster=[runA, runB, sniper] \
+#       ckpts='{runA: outputs/A/checkpoints/best.pt, runB: outputs/B/checkpoints/best.pt}'
+# Разовый список без имён — старый inline `agents=[...]` всё ещё переопределяет ростер:
+#   python -m eval.run 'agents=[{label: a, ckpt: outputs/ts/checkpoints/best.pt}]'
+
+defaults:
+  - _self_
+  # каталог агентов: каждый файл agent/<name>.yaml -> узел catalog.<name>
+  - agent@catalog.sniper: sniper
+  - agent@catalog.full_send: full_send
+  - agent@catalog.random: random
+  - agent@catalog.hold: hold
+  - agent@catalog.producer_hybrid: producer_hybrid
+  - agent@catalog.apex_master: apex_master
+  - agent@catalog.best: best
+  - agent@catalog.bestT: bestT
+  - agent@catalog.last: last
+  - pool: baselines        # пресет ростера по умолчанию -> ставит список `roster`
+
+agents: null         # inline-список агентов; не null -> переопределяет roster (разовый запуск)
+ckpts: null          # ad-hoc чекпойнты по имени: <имя> -> путь (greedy) | {ckpt, decode?, temperature?}
+ckpt_dir: ???        # каталог чекпойнтов (outputs/<ts>/checkpoints); нужен лишь при чекпойнтах в ростере
+
+mode: 1v1            # 1v1 | 4p (число мест = 2 или 4)
+episodes: 20         # число КАРТ на каждый матч
+steps: 500           # длина эпизода в ходах (полная игра = 500)
+seed: null           # null -> случайный посев карт (логируется). Спавн 4-симметричен,
+                     #         места гоняем ротациями -> фиксировать карту не нужно.
+workers: 0           # процессов: 0=авто (cpu-2), 1=последовательно
+device: cpu          # cpu | cuda (для чекпойнтов)
+out: null            # директория результатов; null -> в hydra run-dir текущего запуска
+
+# результаты складываем по дате запуска (рядом с outputs/ обучения, но отдельно)
+hydra:
+  run:
+    dir: eval_runs/${now:%Y-%m-%d_%H-%M-%S}

@@ -1,0 +1,4 @@
+# @package _global_
+# Пресет ростера: чекпойнт (жадный + sampled) против бейзлайнов. Требует ckpt_dir:
+#   python -m eval.run pool=checkpoints ckpt_dir=outputs/<ts>/checkpoints
+roster: [best, bestT, sniper, random]

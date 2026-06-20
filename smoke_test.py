@@ -321,6 +321,76 @@ def test_validate_launch():
           f"({t_new / len(calls) * 1e6:.0f} мкс/вызов)")
 
 
+def test_geo_lite():
+    """Фасад core.geo_lite (обёртка orbit_lite) — паритет со самописной геометрией."""
+    from core import geo_lite
+
+    # маленький obs: step=0 -> initial_planets=current самосогласован для прогноза орбит,
+    # angular_velocity=0 -> чистая геометрия (направление вращения не участвует).
+    planets = [
+        # id, owner, x, y, radius, ships, production
+        [0, 0, 20.0, 20.0, 1.5, 100.0, 3],   # мой источник, путь на восток свободен от солнца
+        [1, -1, 45.0, 20.0, 1.5, 20.0, 2],   # цель строго на восток от источника 0
+        [2, -1, 50.0, 80.0, 2.0, 15.0, 2],   # в стороне
+        [3, 0, 20.0, 50.0, 1.5, 100.0, 3],   # мой источник на линии солнца (y=50)
+        [4, -1, 80.0, 50.0, 1.5, 20.0, 2],   # цель за солнцем от источника 3
+    ]
+    obs = {
+        "player": 0, "planets": planets, "fleets": [],
+        "angular_velocity": 0.0,
+        "initial_planets": [p[:] for p in planets],
+        "comets": [], "comet_planet_ids": [], "step": 0,
+        "remainingOverageTime": 60.0,
+    }
+    geo = geo_lite.GeoEngine(obs, player=0, horizon=200)
+
+    # intercept на (квази)статичную цель: угол ~0 (восток), hit; сверка со самописным
+    angle, eta, hit = geo.intercept(0, 1, ships=100)
+    assert hit, (angle, eta, hit)
+    assert abs(angle) < 1e-2, angle
+    a2, _e2, _h2 = intercept_angle((20.0, 20.0),
+                                   Target(pos=(45.0, 20.0), kind="static", radius=1.5),
+                                   ships=100)
+    assert abs(angle - a2) < 1e-2, (angle, a2)
+    print("  geo_lite.intercept vs intercept (статика): OK angle=%.4f" % angle)
+
+    # planet_at_angle: тем же углом из источника -> попадаем в планету 1
+    assert geo.planet_at_angle(0, angle, ships=100) == 1, geo.planet_at_angle(0, angle, 100)
+    # выстрел прямо в солнце (источник 3 на восток вдоль y=50) -> None
+    assert geo.planet_at_angle(3, 0.0, ships=100) is None
+    print("  geo_lite.planet_at_angle угол->планета + солнце->None: OK")
+
+    # validate_launch: чистый путь проходит, путь сквозь солнце — нет
+    assert geo.validate_launch(0, 1, ships=100).reaches
+    blocked = geo.validate_launch(3, 4, ships=100)
+    assert not (blocked.reaches and blocked.safe), blocked
+    print("  geo_lite.validate_launch чистый/перекрытый солнцем: OK")
+
+    # shim initial_planets: реплеи кладут в initial_planets ТЕКУЩИЕ планеты, а orbit_lite
+    # ждёт позиции игрового шага 0. Без коррекции прогноз орбит уезжает на angvel*(step-1).
+    # Проверяем: на step=50 прогноз на 1 шаг = текущая позиция, повёрнутая на angvel*1.
+    av = 0.05
+    obs2 = {
+        "player": 0,
+        "planets": [[0, 0, 20.0, 20.0, 1.5, 100.0, 3],
+                    [9, -1, 50.0, 30.0, 1.2, 10.0, 2]],   # орбитальная (orb_r=20<50)
+        "fleets": [], "angular_velocity": av,
+        "initial_planets": [[0, 0, 20.0, 20.0, 1.5, 100.0, 3],
+                            [9, -1, 50.0, 30.0, 1.2, 10.0, 2]],  # == current (как в реплеях)
+        "comets": [], "comet_planet_ids": [], "step": 50,
+        "remainingOverageTime": 60.0,
+    }
+    g2 = geo_lite.GeoEngine(obs2, player=0, horizon=20)
+    sl = g2._id2slot[9]
+    x1, y1 = g2._mv.all_positions(1)            # прогноз на 1 шаг вперёд
+    dx, dy = 50.0 - 50.0, 30.0 - 50.0          # текущая позиция относительно центра
+    ex = 50.0 + dx * math.cos(av) - dy * math.sin(av)
+    ey = 50.0 + dx * math.sin(av) + dy * math.cos(av)
+    assert abs(float(x1[sl]) - ex) < 1e-3 and abs(float(y1[sl]) - ey) < 1e-3, \
+        (float(x1[sl]), float(y1[sl]), ex, ey)
+    print("  geo_lite shim initial_planets (прогноз орбиты на 1 шаг): OK")
+
+
 if __name__ == "__main__":
     print("[1] forward")
     test_forward()
@@ -330,4 +400,6 @@ if __name__ == "__main__":
     test_act()
     print("[4] validate_launch")
     test_validate_launch()
+    print("[5] geo_lite")
+    test_geo_lite()
     print("\nВСЕ SMOKE-ТЕСТЫ ПРОЙДЕНЫ")

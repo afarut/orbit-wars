@@ -1,0 +1,3 @@
+# Последний чекпойнт last.pt, жадный декод.
+ckpt: ${ckpt_dir}/last.pt
+decode: greedy

@@ -1,0 +1,4 @@
+# Тот же чекпойнт best.pt, но стохастический декод (sample, T=0.7).
+ckpt: ${ckpt_dir}/best.pt
+decode: sample
+temperature: 0.7

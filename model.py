@@ -21,8 +21,8 @@ r"""Policy/value сеть для Orbit Wars.
 
 Декод (``act``): каждая своя планета выбирает одну цель (или `hold`) через argmax;
 ``num_ships`` — baseline: весь гарнизон источника (~70% залпов экспертов — именно «шлю всё»);
-угол запуска берётся из тулы :mod:`intercept` (чтобы движущиеся цели брались с правильным
-упреждением).
+угол запуска берётся из :class:`core.geo_lite.GeoEngine` (обёртка над ``orbit_lite``,
+чтобы движущиеся цели брались с правильным упреждением).
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from core import features, intercept
+from core import features, geo_lite
 from core.utils import build_mlp
 from core.features import EncodedObs, FeatureConfig
 
@@ -137,19 +137,48 @@ class PolicyValueNet(nn.Module):
         value = self.mlp_value(h_global).squeeze(-1)         # [B]
         return {"logits": logits, "pi": pi, "value": value}
 
+    # -- загрузка чекпойнта -----------------------------------------------------
+    @classmethod
+    def load(cls, path: str, map_location="cpu"):
+        """Загрузить чекпойнт sft.engine -> (готовая сеть в eval-режиме, FeatureConfig).
+
+        Восстанавливает ``ModelConfig``/``FeatureConfig`` из самого чекпойнта, поэтому
+        форму угадывать не нужно. Возвращает кортеж, т.к. ``act`` ждёт ``cfg``.
+        """
+        ckpt = torch.load(path, map_location=map_location, weights_only=False)
+        mcfg = ModelConfig(**ckpt["model_cfg"])
+        fcfg = FeatureConfig(**ckpt["feature_cfg"])
+        net = cls(mcfg)
+        net.load_state_dict(ckpt["model_state"])
+        net.to(map_location)
+        net.eval()
+        return net, fcfg
+
     # -- декод -----------------------------------------------------------------
     @torch.no_grad()
-    def act(self, obs, cfg: FeatureConfig = FeatureConfig()) -> List[list]:
-        """obs -> список [from_planet_id, angle_rad, num_ships] (по одному на источник)."""
+    def act(self, obs, cfg: FeatureConfig = FeatureConfig(), *,
+            decode: str = "greedy", temperature: float = 1.0,
+            generator: "torch.Generator | None" = None) -> List[list]:
+        """obs -> список [from_planet_id, angle_rad, num_ships] (по одному на источник).
+
+        ``decode``: ``"greedy"`` — argmax по `to` (как в сабмишне); ``"sample"`` —
+        сэмпл из ``softmax(logits / temperature)`` (стохастическая политика для eval).
+        Колонка hold всегда валидна, так что у каждого источника есть ≥1 вариант.
+        """
         device = next(self.parameters()).device
         enc = features.encode(obs, cfg=cfg, device=device)
         out = self.forward(enc)
-        pi = out["pi"][0]                        # [M, M+1]
-        hold_idx = pi.shape[1] - 1
+        logits = out["logits"][0]                # [M, M+1]
+        hold_idx = logits.shape[1] - 1
 
         moves: List[list] = []
+        geo = None                               # geo_lite-движок строим лениво (один раз за act)
         for i in enc.owned_idx:
-            j = int(torch.argmax(pi[i]).item())
+            if decode == "sample":
+                probs = torch.softmax(logits[i] / max(1e-6, temperature), dim=-1)
+                j = int(torch.multinomial(probs, 1, generator=generator).item())
+            else:
+                j = int(torch.argmax(logits[i]).item())
             if j == hold_idx:
                 continue
             src = enc.places[i]
@@ -159,6 +188,8 @@ class PolicyValueNet(nn.Module):
             num_ships = int(src.ships)           # baseline: шлём весь гарнизон
             if num_ships <= 0:
                 continue
-            angle, _eta, _hit = intercept.intercept_angle((src.x, src.y), tgt.target, num_ships)
+            if geo is None:
+                geo = geo_lite.GeoEngine(obs, player=enc.player, device=device)
+            angle, _eta, _hit = geo.intercept(src.id, tgt.id, num_ships)
             moves.append([src.id, float(angle), num_ships])
         return moves

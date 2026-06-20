@@ -1,0 +1,4 @@
+# @package _global_
+# Пресет ростера по умолчанию: только эвристики-бейзлайны (чекпойнтов нет -> ckpt_dir не нужен).
+# Свой пресет — скопируй файл в configs/pool/<name>.yaml и впиши имена агентов из configs/agent/.
+roster: [sniper, full_send, random, hold]

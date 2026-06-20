@@ -1,0 +1,5 @@
+# SFT-чекпойнт best.pt, жадный декод (argmax — как в сабмите).
+# Путь = ${ckpt_dir}/best.pt; задай ckpt_dir=outputs/<ts>/checkpoints при запуске
+# (или точечно catalog.best.ckpt=<путь> для сравнения разных прогонов).
+ckpt: ${ckpt_dir}/best.pt
+decode: greedy

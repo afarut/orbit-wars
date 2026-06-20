@@ -1,0 +1,4 @@
+# @package _global_
+# Пресет ростера: скриптовые боты из agents/ + снайпер как опора.
+# Запуск: python -m eval.run pool=scripted mode=1v1 episodes=25
+roster: [producer_hybrid, apex_master, sniper]
