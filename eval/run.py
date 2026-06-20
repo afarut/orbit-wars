@@ -48,6 +48,7 @@ from omegaconf.errors import InterpolationToMissingValueError, MissingMandatoryV
 from eval.agents import AgentSpec, spec_from_config
 from eval.rating import Standing
 from eval.tournament import TournamentResult, run_tournament
+from hydra_utils import print_cfg
 
 _CONFIGS = str(_ROOT / "configs")
 
@@ -140,6 +141,7 @@ def _build_specs(cfg) -> List[AgentSpec]:
 
 @hydra.main(version_base=None, config_path=_CONFIGS, config_name="eval")
 def main(cfg) -> None:
+    print_cfg(cfg, "eval")
     seed = cfg.seed
     if seed is None:                              # спавн симметричен -> по умолчанию случайно
         seed = random.randint(0, 2**31 - 1)

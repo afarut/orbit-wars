@@ -25,7 +25,8 @@ from core.features import FeatureConfig, encode
 from model import ModelConfig, PolicyValueNet
 
 from . import loss as L
-from .dataset import HOLD, IGNORE, SftDataset, build_index, collate, split_indices
+from .dataset import (HOLD, IGNORE, SftDataset, build_index, collate,
+                      ship_bucket, split_indices)
 
 
 def check_labels(path: str, cfg: FeatureConfig, n_samples: int = 300,
@@ -35,23 +36,31 @@ def check_labels(path: str, cfg: FeatureConfig, n_samples: int = 300,
     mp = cfg.max_planets
     ds = SftDataset(path, list(range(len(idx["offsets"]))), idx, cfg=cfg)
 
-    checked = miss = 0
+    checked = miss = frac_checked = 0
     for i in range(min(n_samples, len(ds))):
         rec = ds._read(ds.line_indices[i])
-        sends = {int(a): int(b) for a, b in rec.get("sends", [])}
+        sends, send_ships = {}, {}
+        for row in rec.get("sends", []):
+            sends[int(row[0])] = int(row[1])
+            if len(row) > 2:
+                send_ships[int(row[0])] = int(row[2])
         if not sends:
             continue
         enc = encode(rec["state"], cfg=cfg, device=None)
-        # (kind, local) -> id под раскладкой places
+        # (kind, local) -> id под раскладкой places; id -> гарнизон (для round-trip доли)
         id_of = {}
+        ships_of = {}
         for j, pl in enumerate(enc.places):
             if pl is not None:
                 id_of[("planet", j) if j < mp else ("comet", j - mp)] = int(pl.id)
+                ships_of[int(pl.id)] = pl.ships
 
         item = ds[i]
-        src_targets = {}
-        for src_kind, src_local, tgt in item["sources"]:
-            src_targets[id_of[(src_kind, src_local)]] = tgt
+        src_targets, src_buckets = {}, {}
+        for src_kind, src_local, tgt, frac_bucket in item["sources"]:
+            fid = id_of[(src_kind, src_local)]
+            src_targets[fid] = tgt
+            src_buckets[fid] = frac_bucket
 
         for from_id, dest_id in sends.items():
             tgt = src_targets.get(from_id)
@@ -62,7 +71,14 @@ def check_labels(path: str, cfg: FeatureConfig, n_samples: int = 300,
             mapped = id_of[tgt]
             assert mapped == dest_id, f"метка {mapped} != dest {dest_id} (src {from_id})"
             checked += 1
-    print(f"[labels] сверено send-меток: {checked}; hold/ignore у send-источников: {miss} — OK")
+            # round-trip бакета доли: метка датасета == пересчёт ship_bucket(ships, гарнизон)
+            if from_id in send_ships:
+                exp = ship_bucket(send_ships[from_id], ships_of[from_id])
+                got = src_buckets[from_id]
+                assert got == exp, f"бакет {got} != {exp} (src {from_id}, ships {send_ships[from_id]})"
+                frac_checked += 1
+    print(f"[labels] сверено send-меток: {checked}; бакетов доли: {frac_checked}; "
+          f"hold/ignore у send-источников: {miss} — OK")
 
 
 def check_mask_invariant(path: str, cfg: FeatureConfig, max_lines: int = 4000) -> None:
@@ -71,11 +87,12 @@ def check_mask_invariant(path: str, cfg: FeatureConfig, max_lines: int = 4000) -
     tr, _ = split_indices(idx, val_frac=0.0, limit=400)
     ds = SftDataset(path, tr, idx, cfg=cfg)
     batch = [ds[i] for i in range(min(64, len(ds)))]
-    obs, labels, hold_idx = collate(batch)
+    obs, labels, frac_labels, hold_idx = collate(batch)
 
     model = PolicyValueNet(ModelConfig())
+    frac_pairs, frac_tgt = L.frac_pairs_from(labels, frac_labels)
     with torch.no_grad():
-        out = model(obs)
+        out = model(obs, frac_pairs=frac_pairs)
     logits = out["logits"]
     B, M, C = logits.shape
     assert C == M + 1 and M == hold_idx, f"формы: {logits.shape}, hold_idx={hold_idx}"
@@ -84,8 +101,13 @@ def check_mask_invariant(path: str, cfg: FeatureConfig, max_lines: int = 4000) -
     gathered = logits.gather(-1, labels.clamp_min(0).unsqueeze(-1)).squeeze(-1)
     bad = (~torch.isfinite(gathered)) & valid
     assert bad.sum().item() == 0, f"{int(bad.sum())} меток попали на -inf колонку!"
+
+    # голова числа кораблей: forma [N,4], N == число валидных бакетов доли
+    n_frac = int((frac_labels != -100).sum())
+    assert tuple(out["frac_logits"].shape) == (n_frac, 4), \
+        f"frac_logits {tuple(out['frac_logits'].shape)} != ({n_frac}, 4)"
     print(f"[mask] logits {tuple(logits.shape)}, валидных меток {int(valid.sum())}, "
-          f"все на конечных логитах — OK")
+          f"frac_logits ({n_frac}, 4) — OK")
 
 
 def check_overfit_one_batch(path: str, cfg: FeatureConfig, steps: int = 250,
@@ -99,25 +121,34 @@ def check_overfit_one_batch(path: str, cfg: FeatureConfig, steps: int = 250,
     tr, _ = split_indices(idx, val_frac=0.0, limit=2000)
     ds = SftDataset(path, tr, idx, cfg=cfg)
     batch = [ds[i] for i in range(min(batch_size, len(ds)))]
-    obs, labels, hold_idx = collate(batch)
+    obs, labels, frac_labels, hold_idx = collate(batch)
+    frac_pairs, frac_tgt = L.frac_pairs_from(labels, frac_labels)
 
     model = PolicyValueNet(ModelConfig())
     opt = torch.optim.AdamW(model.parameters(), lr=3e-3)
-    last = {}
+    # берём ЛУЧШИЙ acc по кривой: на высоком lr/крошечном батче возможен поздний
+    # разнос (overshoot AdamW) — тест про обучаемость «дошёл ли вверх», не про стабильность.
+    best_send, best_frac, any_frac = 0.0, 0.0, False
     for step in range(steps + 1):
-        out = model(obs)
-        loss = L.policy_loss(out["logits"], labels, hold_idx, w_hold=1.0)
+        out = model(obs, frac_pairs=frac_pairs)
+        loss = (L.policy_loss(out["logits"], labels, hold_idx, w_hold=1.0)
+                + L.fraction_loss(out["frac_logits"], frac_tgt))
         if step % 50 == 0:
             m = L.policy_metrics(out["logits"], labels, hold_idx)
-            last = m
+            facc, fn = L.fraction_acc(out["frac_logits"], frac_tgt)
+            best_send = max(best_send, m["send_acc"])
+            if fn:
+                best_frac, any_frac = max(best_frac, facc), True
             print(f"[overfit] step {step:3d}  loss={loss.item():.3f}  "
                   f"send_acc={m['send_acc']:.3f}  hold_acc={m['hold_acc']:.3f}  "
-                  f"(n_send={m['n_send']})")
+                  f"frac_acc={facc:.3f}  (n_send={m['n_send']} n_frac={fn})")
         opt.zero_grad(set_to_none=True)
         loss.backward()
         opt.step()
-    assert last.get("send_acc", 0.0) > 0.6, \
+    assert best_send > 0.6, \
         "send_acc не вырос — возможен баг в метках/лоссе"
+    assert not any_frac or best_frac > 0.6, \
+        "frac_acc не вырос — возможен баг в метках/лоссе головы числа кораблей"
 
 
 def main() -> None:

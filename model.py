@@ -20,9 +20,11 @@ r"""Policy/value сеть для Orbit Wars.
                 +  value-голова с глобального токена
 
 Декод (``act``): каждая своя планета выбирает одну цель (или `hold`) через argmax;
-``num_ships`` — baseline: весь гарнизон источника (~70% залпов экспертов — именно «шлю всё»);
-угол запуска берётся из :class:`core.geo_lite.GeoEngine` (обёртка над ``orbit_lite``,
-чтобы движущиеся цели брались с правильным упреждением).
+``num_ships`` выбирает голова ``mlp_frac`` — 4-классовый бакет доли гарнизона
+{25,50,75,100}%, обусловленный ПАРОЙ (источник, цель): конкат хидденов `h_src`⊕`h_tgt`
+(факторизация `p(куда)·p(сколько|куда)`); угол запуска берётся из
+:class:`core.geo_lite.GeoEngine` (обёртка над ``orbit_lite``, чтобы движущиеся цели
+брались с правильным упреждением).
 """
 
 from __future__ import annotations
@@ -49,8 +51,25 @@ class ModelConfig:
     ffn: int = 512
     dropout: float = 0.0
     enc_hidden: int = 128       # ширина скрытого слоя per-type энкодеров
-    head_hidden: int = 128      # ширина скрытого слоя голов from/to/value
-    capture_buffer: int = 2     # num_ships = min(garrison, target.ships + 1 + buffer)
+    head_hidden: int = 128      # ширина скрытого слоя голов from/to/value/frac
+    n_frac_buckets: int = 4     # голова числа кораблей: бакеты доли {25,50,75,100}%
+    capture_buffer: int = 2     # (не используется) num_ships = min(garrison, target.ships+1+buffer)
+
+
+# доли гарнизона по бакетам и обратный декод bucket -> целое число кораблей.
+# Декод по бину (мин. ошибка квантования, insights/rounding-direction-by-bin.md):
+# 100%->весь гарнизон, 25/75%->floor, 50%->ceil.
+def bucket_to_ships(bucket: int, garrison: int) -> int:
+    """Бакет доли {0:25,1:50,2:75,3:100}% -> целое число кораблей из гарнизона."""
+    if bucket >= 3:
+        return garrison
+    if bucket == 0:
+        n = int(math.floor(0.25 * garrison))
+    elif bucket == 1:
+        n = int(math.ceil(0.50 * garrison))
+    else:
+        n = int(math.floor(0.75 * garrison))
+    return max(1, min(garrison, n))
 
 
 class PolicyValueNet(nn.Module):
@@ -89,10 +108,17 @@ class PolicyValueNet(nn.Module):
         self.mlp_to = build_mlp(d, [cfg.head_hidden], cfg.d_k)
         self.mlp_hold = build_mlp(d, [cfg.head_hidden], 1)
         self.mlp_value = build_mlp(d, [cfg.head_hidden], 1)
+        # голова числа кораблей: вход 2*d (конкат h_src ⊕ h_tgt), выход — бакеты доли
+        self.mlp_frac = build_mlp(2 * d, [cfg.head_hidden], cfg.n_frac_buckets)
 
     # -- forward ---------------------------------------------------------------
-    def forward(self, enc: EncodedObs) -> Dict[str, torch.Tensor]:
-        """Возвращает dict с ``logits`` [B,M,M+1], ``pi`` [B,M,M+1], ``value`` [B]."""
+    def forward(self, enc: EncodedObs, frac_pairs=None) -> Dict[str, torch.Tensor]:
+        """Возвращает dict: ``logits`` [B,M,M+1], ``pi`` [B,M,M+1], ``value`` [B],
+        ``h_place`` [B,M,d], ``place_mask`` [B,M].
+
+        ``frac_pairs=(b_idx, s_idx, t_idx)`` (teacher forcing) — если переданы, голова
+        числа кораблей считается ВНУТРИ forward (важно для DDP: иначе градиенты
+        ``mlp_frac`` не синхронизируются) и кладётся в ``frac_logits`` [N,4]."""
         planet_tok = self.enc_planet(enc.planet_feats) + self.type_planet
         comet_tok = self.enc_comet(enc.comet_feats) + self.type_comet
         fleet_tok = self.enc_fleet(enc.fleet_feats) + self.type_fleet
@@ -135,7 +161,15 @@ class PolicyValueNet(nn.Module):
         logits = torch.cat([scores, hold], dim=-1)           # [B, M, M+1]
         pi = F.softmax(logits, dim=-1)                       # softmax по `to` (+hold)
         value = self.mlp_value(h_global).squeeze(-1)         # [B]
-        return {"logits": logits, "pi": pi, "value": value}
+        out = {"logits": logits, "pi": pi, "value": value,
+               "h_place": h_place, "place_mask": place_mask}
+        if frac_pairs is not None:
+            # teacher forcing: гейзерим хиддены источника и ЭКСПЕРТНОЙ цели, конкат -> mlp_frac
+            b_idx, s_idx, t_idx = frac_pairs
+            h_src = h_place[b_idx, s_idx]                     # [N, d]
+            h_tgt = h_place[b_idx, t_idx]                     # [N, d]
+            out["frac_logits"] = self.mlp_frac(torch.cat([h_src, h_tgt], dim=-1))  # [N, 4]
+        return out
 
     # -- загрузка чекпойнта -----------------------------------------------------
     @classmethod
@@ -169,6 +203,7 @@ class PolicyValueNet(nn.Module):
         enc = features.encode(obs, cfg=cfg, device=device)
         out = self.forward(enc)
         logits = out["logits"][0]                # [M, M+1]
+        h_place = out["h_place"][0]              # [M, d]
         hold_idx = logits.shape[1] - 1
 
         moves: List[list] = []
@@ -185,9 +220,17 @@ class PolicyValueNet(nn.Module):
             tgt = enc.places[j]
             if tgt is None or src is None:
                 continue
-            num_ships = int(src.ships)           # baseline: шлём весь гарнизон
-            if num_ships <= 0:
+            garrison = int(src.ships)
+            if garrison <= 0:
                 continue
+            # число кораблей: бакет доли, обусловленный парой (источник i -> цель j)
+            fl = self.mlp_frac(torch.cat([h_place[i], h_place[j]], dim=-1))  # [4]
+            if decode == "sample":
+                bprobs = torch.softmax(fl / max(1e-6, temperature), dim=-1)
+                bucket = int(torch.multinomial(bprobs, 1, generator=generator).item())
+            else:
+                bucket = int(torch.argmax(fl).item())
+            num_ships = bucket_to_ships(bucket, garrison)
             if geo is None:
                 geo = geo_lite.GeoEngine(obs, player=enc.player, device=device)
             angle, _eta, _hit = geo.intercept(src.id, tgt.id, num_ships)

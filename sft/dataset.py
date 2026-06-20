@@ -14,6 +14,7 @@ r"""SFT-датасет + collate с динамическим паддингом 
 from __future__ import annotations
 
 import json
+import math
 import os
 from typing import Dict, List, Optional, Tuple
 
@@ -27,6 +28,16 @@ from core.features import FeatureConfig, encode
 HOLD = "HOLD"
 IGNORE = "IGNORE"
 IGNORE_INDEX = -100
+
+# голова числа кораблей: бакеты доли гарнизона {25,50,75,100}% -> {0,1,2,3}
+N_FRAC_BUCKETS = 4
+
+
+def ship_bucket(ships: float, garrison: float) -> int:
+    """Доля ships/garrison -> бакет {0:25,1:50,2:75,3:100}% (снап вверх к ближайшей четверти)."""
+    g = max(1.0, float(garrison))
+    frac = float(ships) / g
+    return min(N_FRAC_BUCKETS - 1, max(0, math.ceil(frac / 0.25) - 1))
 
 
 # --- индекс файла (offset+episode на строку), кэш в сайдкар --------------------
@@ -140,23 +151,35 @@ class SftDataset(Dataset):
                 continue
             id2place[int(pl.id)] = ("planet", j) if j < mp else ("comet", j - mp)
 
-        sends = {int(a): int(b) for a, b in rec.get("sends", [])}
+        # sends-строки: [from_id, dest_id] ИЛИ [from_id, dest_id, ships] (число кораблей
+        # для головы доли; старые 2-колоночные файлы грузятся без метки доли).
+        sends: Dict[int, int] = {}
+        send_ships: Dict[int, int] = {}
+        for row in rec.get("sends", []):
+            sends[int(row[0])] = int(row[1])
+            if len(row) > 2:
+                send_ships[int(row[0])] = int(row[2])
         unresolved = {int(x) for x in rec.get("unresolved", [])}
 
-        # source-таргеты: (src_kind, src_local, tgt) где tgt = ('planet'|'comet',l)|HOLD|IGNORE
-        sources: List[Tuple[str, int, object]] = []
+        # source-таргеты: (src_kind, src_local, tgt, frac_bucket) где
+        # tgt = ('planet'|'comet',l)|HOLD|IGNORE; frac_bucket = -100, если нет метки доли.
+        sources: List[Tuple[str, int, object, int]] = []
         for j in enc.owned_idx:
             pl = enc.places[j]
             src_kind, src_local = ("planet", j) if j < mp else ("comet", j - mp)
             sid = int(pl.id)
+            frac_bucket = IGNORE_INDEX
             if sid in sends:
                 dst = sends[sid]
                 tgt = id2place.get(dst, IGNORE)   # назначение усечено -> ignore
+                # бакет доли ставим только при разрешённой цели (нужен t_idx для гейзера)
+                if tgt is not IGNORE and sid in send_ships:
+                    frac_bucket = ship_bucket(send_ships[sid], pl.ships)
             elif sid in unresolved:
                 tgt = IGNORE                       # угол не восстановился -> не учим
             else:
                 tgt = HOLD
-            sources.append((src_kind, src_local, tgt))
+            sources.append((src_kind, src_local, tgt, frac_bucket))
 
         return {
             "planet_feats": enc.planet_feats[0, :n_p].clone(),   # [n_p, 20]
@@ -181,8 +204,12 @@ def _pad_stack(items: List[torch.Tensor], n_max: int, dim: int):
     return out, mask
 
 
-def collate(batch: List[dict]) -> Tuple["BatchObs", torch.Tensor, int]:
-    """Динамический паддинг по каждой сущности + сборка labels [B, M_b] (-100 = ignore)."""
+def collate(batch: List[dict]) -> Tuple["BatchObs", torch.Tensor, torch.Tensor, int]:
+    """Динамический паддинг + labels [B,M_b] (цель) и frac_labels [B,M_b] (бакет доли).
+
+    Инвариант: где ``frac_labels[b,s] != -100``, там ``labels[b,s]`` — валидный индекс
+    места-цели (бакет ставится только при разрешённой цели), нужен для гейзера h_tgt.
+    """
     P_b = max(x["n_p"] for x in batch)
     C_b = max(x["n_c"] for x in batch)
     F_b = max(x["n_f"] for x in batch)
@@ -195,8 +222,9 @@ def collate(batch: List[dict]) -> Tuple["BatchObs", torch.Tensor, int]:
     global_feats = torch.stack([x["global_feats"] for x in batch], dim=0)  # [B, 11]
 
     labels = torch.full((len(batch), M_b), IGNORE_INDEX, dtype=torch.long)
+    frac_labels = torch.full((len(batch), M_b), IGNORE_INDEX, dtype=torch.long)
     for b, x in enumerate(batch):
-        for src_kind, src_local, tgt in x["sources"]:
+        for src_kind, src_local, tgt, frac_bucket in x["sources"]:
             src_g = src_local if src_kind == "planet" else P_b + src_local
             if tgt == IGNORE:
                 continue
@@ -205,10 +233,12 @@ def collate(batch: List[dict]) -> Tuple["BatchObs", torch.Tensor, int]:
             else:
                 tk, tl = tgt
                 labels[b, src_g] = tl if tk == "planet" else P_b + tl
+                if frac_bucket != IGNORE_INDEX:
+                    frac_labels[b, src_g] = frac_bucket
 
     obs = BatchObs(planet_feats, planet_mask, comet_feats, comet_mask,
                    fleet_feats, fleet_mask, global_feats)
-    return obs, labels, hold_idx
+    return obs, labels, frac_labels, hold_idx
 
 
 class BatchObs:

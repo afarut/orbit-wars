@@ -8,3 +8,4 @@ ffn: 512
 dropout: 0.0
 enc_hidden: 128
 head_hidden: 128
+n_frac_buckets: 4        # голова числа кораблей: бакеты доли {25,50,75,100}% гарнизона

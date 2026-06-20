@@ -9,6 +9,12 @@ grad_clip: 1.0
 amp: true                # авто-выкл вне CUDA
 log_every: 50            # шагов между лог-строками (rank 0)
 value_weight: 0.0        # value-голову не учим (датасет winner-only); задел на будущее
+
+# голова числа кораблей (доля гарнизона {25,50,75,100}%)
+w_frac: 1.0              # вес CE-терма головы доли в общем лоссе (lloss + w_frac*floss)
+# веса классов бакетов [25,50,75,100]% — балансируют перекос к 100% (~67% вылетов).
+# Ориентир (обратная частота) печатает dataprep/preprocess.py; крути под датасет.
+frac_weights: [3.0, 3.0, 3.0, 0.35]
 ckpt_dir: checkpoints    # относительно hydra run-dir
 save_each_epoch: true    # хранить отдельный epoch{N}.pt на каждую эпоху (помимо last/best)
 tensorboard: true        # логи TensorBoard (пишет только rank 0)

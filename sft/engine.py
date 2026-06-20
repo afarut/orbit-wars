@@ -86,7 +86,8 @@ def _model_cfg(cfg) -> ModelConfig:
     m = cfg.model
     return ModelConfig(d_model=int(m.d_model), d_k=int(m.d_k), n_layers=int(m.n_layers),
                        n_heads=int(m.n_heads), ffn=int(m.ffn), dropout=float(m.dropout),
-                       enc_hidden=int(m.enc_hidden), head_hidden=int(m.head_hidden))
+                       enc_hidden=int(m.enc_hidden), head_hidden=int(m.head_hidden),
+                       n_frac_buckets=int(m.get("n_frac_buckets", 4)))
 
 
 def _make_writer(cfg):
@@ -114,6 +115,10 @@ def run(cfg) -> None:
         dist.init_process_group(backend=backend)
     is_main = rank == 0
     _seed(int(cfg.data.seed), rank)
+
+    if is_main:
+        from hydra_utils import print_cfg     # общий хелпер печати конфига (офлайн)
+        print_cfg(cfg, "sft")
 
     fcfg = _feature_cfg(cfg)
     mcfg = _model_cfg(cfg)
@@ -167,6 +172,11 @@ def run(cfg) -> None:
     use_amp = bool(cfg.train.amp) and device.type == "cuda"
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
     w_hold = float(cfg.data.w_hold)
+    # голова числа кораблей: вес терма + веса классов (балансировка перекоса к 100%)
+    w_frac = float(cfg.train.get("w_frac", 1.0))
+    fw = cfg.train.get("frac_weights", None)
+    frac_weights = (torch.tensor([float(x) for x in fw], dtype=torch.float32, device=device)
+                    if fw else None)
     grad_clip = float(cfg.train.grad_clip)
     log_every = int(cfg.train.log_every)
 
@@ -185,14 +195,19 @@ def run(cfg) -> None:
         if train_sampler is not None:
             train_sampler.set_epoch(epoch)
         model.train()
-        for bi, (obs, labels, hold_idx) in enumerate(train_loader):
+        for bi, (obs, labels, frac_labels, hold_idx) in enumerate(train_loader):
             obs = obs.to(device)
             labels = labels.to(device)
+            frac_labels = frac_labels.to(device)
             opt.zero_grad(set_to_none=True)
+            # пары (источник, экспертная цель) для головы числа кораблей -> внутрь forward
+            frac_pairs, frac_tgt = L.frac_pairs_from(labels, frac_labels)
             with torch.amp.autocast("cuda", enabled=use_amp):
-                out = model(obs)
+                out = model(obs, frac_pairs=frac_pairs)
                 lloss = L.policy_loss(out["logits"], labels, hold_idx, w_hold=w_hold)
-            scaler.scale(lloss).backward()
+                floss = L.fraction_loss(out["frac_logits"], frac_tgt, weight=frac_weights)
+                loss = lloss + w_frac * floss
+            scaler.scale(loss).backward()
             if grad_clip > 0:
                 scaler.unscale_(opt)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
@@ -203,14 +218,19 @@ def run(cfg) -> None:
 
             if is_main and log_every and global_step % log_every == 0:
                 m = L.policy_metrics(out["logits"].detach(), labels, hold_idx)
+                fa, fn = L.fraction_acc(out["frac_logits"].detach(), frac_tgt)
                 lr = sched.get_last_lr()[0]
-                print(f"  e{epoch} s{global_step} loss={lloss.item():.4f} "
-                      f"send_acc={m['send_acc']:.3f} hold_acc={m['hold_acc']:.3f} lr={lr:.2e}")
+                print(f"  e{epoch} s{global_step} loss={loss.item():.4f} "
+                      f"send_acc={m['send_acc']:.3f} hold_acc={m['hold_acc']:.3f} "
+                      f"frac_acc={fa:.3f} lr={lr:.2e}")
                 if writer is not None:
-                    writer.add_scalar("train/loss", lloss.item(), global_step)
+                    writer.add_scalar("train/loss", loss.item(), global_step)
+                    writer.add_scalar("train/policy_loss", lloss.item(), global_step)
+                    writer.add_scalar("train/frac_loss", floss.item(), global_step)
                     writer.add_scalar("train/acc", m["acc"], global_step)
                     writer.add_scalar("train/send_acc", m["send_acc"], global_step)
                     writer.add_scalar("train/hold_acc", m["hold_acc"], global_step)
+                    writer.add_scalar("train/frac_acc", fa, global_step)
                     writer.add_scalar("train/lr", lr, global_step)
 
         # --- eval ---
@@ -219,8 +239,9 @@ def run(cfg) -> None:
             if is_main:
                 print(f"[eval e{epoch}] loss={vm['loss']:.4f} acc={vm['acc']:.3f} "
                       f"send_acc={vm['send_acc']:.3f} hold_acc={vm['hold_acc']:.3f} "
+                      f"frac_acc={vm['frac_acc']:.3f} "
                       f"hold_P={vm['hold_precision']:.3f} hold_R={vm['hold_recall']:.3f} "
-                      f"(send={vm['n_send']:,} hold={vm['n_hold']:,})")
+                      f"(send={vm['n_send']:,} hold={vm['n_hold']:,} frac={vm['n_frac']:,})")
                 with open(metrics_log, "a", encoding="utf-8") as f:
                     f.write(json.dumps({"epoch": epoch, **vm}) + "\n")
                 if writer is not None:
@@ -247,16 +268,24 @@ def _evaluate(model, loader, device, hold_w: float, ddp: bool) -> Dict[str, floa
     """Прогон по val: агрегируем счётчики (по DDP — all_reduce SUM) -> метрики."""
     model.eval()
     acc = torch.zeros(len(L.COUNT_KEYS), dtype=torch.float64, device=device)
+    facc = torch.zeros(2, dtype=torch.float64, device=device)   # [frac_correct, frac_valid]
     hold_idx = 0
-    for obs, labels, hold_idx in loader:
+    for obs, labels, frac_labels, hold_idx in loader:
         obs = obs.to(device)
         labels = labels.to(device)
-        out = model(obs)
+        frac_labels = frac_labels.to(device)
+        frac_pairs, frac_tgt = L.frac_pairs_from(labels, frac_labels)
+        out = model(obs, frac_pairs=frac_pairs)
         acc += L.policy_counts(out["logits"], labels, hold_idx, w_hold=hold_w)
+        facc += L.frac_counts(out["frac_logits"], frac_tgt)
     if ddp:
         dist.all_reduce(acc, op=dist.ReduceOp.SUM)
+        dist.all_reduce(facc, op=dist.ReduceOp.SUM)
     model.train()
-    return L.counts_to_metrics(acc)
+    metrics = L.counts_to_metrics(acc)
+    metrics["frac_acc"] = float(facc[0] / facc[1]) if facc[1] else 0.0
+    metrics["n_frac"] = int(facc[1].item())
+    return metrics
 
 
 def _save_ckpt(path: str, core: PolicyValueNet, mcfg: ModelConfig,

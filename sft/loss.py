@@ -15,6 +15,51 @@ import torch.nn.functional as F
 from .dataset import IGNORE_INDEX
 
 
+def frac_pairs_from(labels: torch.Tensor, frac_labels: torch.Tensor):
+    """Пары (b_idx, s_idx, t_idx) + бакеты для головы числа кораблей (teacher forcing).
+
+    ``t_idx = labels[b, src]`` — ЭКСПЕРТНАЯ цель (валидный индекс места, т.к. frac-метка
+    ставится только для разрешённых вылетов). Пары прокидываются в ``forward(frac_pairs=)``,
+    чтобы голова считалась внутри обёрнутого forward (DDP-корректно). Возвращает
+    ``((b_idx, s_idx, t_idx), targets)``."""
+    valid = frac_labels != IGNORE_INDEX
+    b_idx, s_idx = valid.nonzero(as_tuple=True)
+    t_idx = labels[b_idx, s_idx]
+    targets = frac_labels[b_idx, s_idx]
+    return (b_idx, s_idx, t_idx), targets
+
+
+def fraction_loss(frac_logits: torch.Tensor, targets: torch.Tensor,
+                  weight: "torch.Tensor | None" = None) -> torch.Tensor:
+    """CE головы числа кораблей. frac_logits [N,4], targets [N] (бакеты 0..3).
+
+    Класс фиксирован (4), поэтому стандартный ``weight=``-вектор работает (балансировка
+    перекоса в сторону 100%). При N==0 (нет сандов в батче) -> 0, но голова остаётся
+    «использованной» (``frac_logits.sum()*0``) для согласованности DDP между рангами."""
+    if targets.numel() == 0:
+        return frac_logits.sum() * 0.0
+    return F.cross_entropy(frac_logits, targets, weight=weight)
+
+
+@torch.no_grad()
+def fraction_acc(frac_logits: torch.Tensor, targets: torch.Tensor) -> tuple:
+    """(accuracy, N) головы числа кораблей для логов; (0.0, 0) при пустом батче сандов."""
+    if targets.numel() == 0:
+        return 0.0, 0
+    pred = frac_logits.argmax(dim=-1)
+    return float((pred == targets).float().mean().item()), int(targets.numel())
+
+
+@torch.no_grad()
+def frac_counts(frac_logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    """Счётчики [frac_correct, frac_valid] (float64) — суммируемы и all_reduce-абельны."""
+    if targets.numel() == 0:
+        return torch.zeros(2, dtype=torch.float64, device=frac_logits.device)
+    pred = frac_logits.argmax(dim=-1)
+    return torch.tensor([float((pred == targets).sum()), float(targets.numel())],
+                        dtype=torch.float64, device=frac_logits.device)
+
+
 def policy_loss(logits: torch.Tensor, labels: torch.Tensor, hold_idx: int,
                 w_hold: float = 1.0) -> torch.Tensor:
     """Взвешенный CE по источникам. logits [B,M,M+1], labels [B,M] (-100 = ignore)."""

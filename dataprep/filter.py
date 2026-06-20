@@ -19,6 +19,9 @@ r"""Офлайн-фильтр SFT-датасета Orbit Wars (JSONL -> JSONL).
                            планеты-источника (``ships == гарнизон``). Вылеты с
                            РАЗНЫХ планет разрешены (каждый — весь гарнизон),
                            частичные отправки отсекаются. [по умолчанию]
+  * ``partial_send``     — hold ЛИБО любой вылет (включая ЧАСТИЧНЫЙ); отсекает только
+                           вылеты с источником вне obs / пустым гарнизоном. Нужен как
+                           обучающий сигнал для головы числа кораблей (доля гарнизона).
   * ``distinct_sources`` — hold ЛИБО ни одна планета не стреляет дважды за ход
                            (отсекает «одна планета -> несколько целей»).
   * ``single_launch``    — hold ЛИБО ровно один вылет за ход (отсекает ЛЮБОЙ
@@ -108,6 +111,24 @@ def keep_full_send(sample: dict) -> bool:
     return True
 
 
+def keep_partial_send(sample: dict) -> bool:
+    """hold ЛИБО любой вылет (включая частичный) — впускает дробные отправки.
+
+    В отличие от ``full_send``, НЕ требует ``ships == гарнизон``: нужен как обучающий
+    сигнал для головы числа кораблей. Отсекает только вылеты с источником вне obs или
+    с нулевым гарнизоном (аномалия — нечего слать).
+    """
+    action = sample.get("action") or []
+    if not action:
+        return True                              # бездействие (hold)
+    g = _garrison_map(sample)
+    for move in action:                          # move == [from_id, angle, ships]
+        garrison = g.get(move[0])
+        if garrison is None or garrison <= 0:
+            return False                         # источник не найден / пустой гарнизон
+    return True
+
+
 def keep_distinct_sources(sample: dict) -> bool:
     """hold ЛИБО ни одна планета не стреляет дважды за ход.
 
@@ -126,6 +147,7 @@ def keep_single_launch(sample: dict) -> bool:
 # Реестр фильтров (имя -> предикат). Будущие правила дописывать сюда.
 FILTERS: Dict[str, Predicate] = {
     "full_send": keep_full_send,
+    "partial_send": keep_partial_send,
     "distinct_sources": keep_distinct_sources,
     "single_launch": keep_single_launch,
 }
