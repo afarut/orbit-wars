@@ -1,0 +1,25 @@
+# Зависимости проекта (Python 3.12). Версии сняты с рабочего .venv.
+# Прямые зависимости; транзитивные (jax/transformers/litellm и пр., которые
+# тянет за собой kaggle-environments) ставятся автоматически.
+
+# --- Runtime / сабмишн (model.py + core/): только numpy + torch ---
+numpy==2.4.6
+# torch без локального суффикса: pip сам подберёт сборку под платформу
+# (на Mac — CPU+MPS, на Linux с видюхой — CUDA). Код выбирает девайс сам.
+torch==2.12.0
+
+# --- Обучение (sft/): Hydra-конфиги + TensorBoard ---
+hydra-core==1.3.3
+omegaconf==2.3.1
+tensorboard==2.20.0
+
+# --- Офлайн-ETL (dataprep/): скачивание реплеев + прогресс-бары ---
+kaggle==2.2.1
+tqdm==4.68.2
+
+# --- Локальная оценка (eval/): движок Kaggle + рейтинги ---
+kaggle-environments==1.30.1
+trueskill==0.4.5
+
+# --- Анализ / графики (notebooks/, insights/) ---
+matplotlib==3.11.0
