@@ -108,8 +108,8 @@ class PolicyValueNet(nn.Module):
         self.mlp_to = build_mlp(d, [cfg.head_hidden], cfg.d_k)
         self.mlp_hold = build_mlp(d, [cfg.head_hidden], 1)
         self.mlp_value = build_mlp(d, [cfg.head_hidden], 1)
-        # хардкод под rl_best.pt: вход d (один h_src), НЕ 2*d. Откатить.
-        self.mlp_frac = build_mlp(d, [cfg.head_hidden], cfg.n_frac_buckets)
+        # голова числа кораблей: вход 2*d (конкат h_src ⊕ h_tgt), выход — бакеты доли
+        self.mlp_frac = build_mlp(2 * d, [cfg.head_hidden], cfg.n_frac_buckets)
 
     # -- forward ---------------------------------------------------------------
     def forward(self, enc: EncodedObs, frac_pairs=None) -> Dict[str, torch.Tensor]:
@@ -167,7 +167,8 @@ class PolicyValueNet(nn.Module):
             # teacher forcing: гейзерим хиддены источника и ЭКСПЕРТНОЙ цели, конкат -> mlp_frac
             b_idx, s_idx, t_idx = frac_pairs
             h_src = h_place[b_idx, s_idx]                     # [N, d]
-            out["frac_logits"] = self.mlp_frac(h_src)         # [N, 4]  (хардкод: один h_src)
+            h_tgt = h_place[b_idx, t_idx]                     # [N, d]
+            out["frac_logits"] = self.mlp_frac(torch.cat([h_src, h_tgt], dim=-1))  # [N, 4]
         return out
 
     # -- загрузка чекпойнта -----------------------------------------------------
@@ -179,9 +180,8 @@ class PolicyValueNet(nn.Module):
         форму угадывать не нужно. Возвращает кортеж, т.к. ``act`` ждёт ``cfg``.
         """
         ckpt = torch.load(path, map_location=map_location, weights_only=False)
-        # терпим «голый» чекпойнт rl_best.pt (только model_state) -> дефолтные конфиги
-        mcfg = ModelConfig(**ckpt["model_cfg"]) if "model_cfg" in ckpt else ModelConfig()
-        fcfg = FeatureConfig(**ckpt["feature_cfg"]) if "feature_cfg" in ckpt else FeatureConfig()
+        mcfg = ModelConfig(**ckpt["model_cfg"])
+        fcfg = FeatureConfig(**ckpt["feature_cfg"])
         net = cls(mcfg)
         net.load_state_dict(ckpt["model_state"])
         net.to(map_location)
@@ -224,7 +224,7 @@ class PolicyValueNet(nn.Module):
             if garrison <= 0:
                 continue
             # число кораблей: бакет доли, обусловленный парой (источник i -> цель j)
-            fl = self.mlp_frac(h_place[i])                    # [4]  (хардкод: один h_src)
+            fl = self.mlp_frac(torch.cat([h_place[i], h_place[j]], dim=-1))  # [4]
             if decode == "sample":
                 bprobs = torch.softmax(fl / max(1e-6, temperature), dim=-1)
                 bucket = int(torch.multinomial(bprobs, 1, generator=generator).item())
