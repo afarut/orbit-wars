@@ -14,7 +14,6 @@ r"""SFT-датасет + collate с динамическим паддингом 
 from __future__ import annotations
 
 import json
-import math
 import os
 from typing import Dict, List, Optional, Tuple
 
@@ -23,6 +22,7 @@ import torch
 from torch.utils.data import Dataset
 
 from core.features import FeatureConfig, encode
+from model import bucket_to_ships  # один источник правды для floor-декода доли
 
 # спец-метки таргета источника (до перевода в индекс места в collate)
 HOLD = "HOLD"
@@ -34,10 +34,19 @@ N_FRAC_BUCKETS = 4
 
 
 def ship_bucket(ships: float, garrison: float) -> int:
-    """Доля ships/garrison -> бакет {0:25,1:50,2:75,3:100}% (снап вверх к ближайшей четверти)."""
-    g = max(1.0, float(garrison))
-    frac = float(ships) / g
-    return min(N_FRAC_BUCKETS - 1, max(0, math.ceil(frac / 0.25) - 1))
+    """Число посланных ships -> бакет доли {0:25,1:50,2:75,3:100}%.
+
+    Метка = НАИБОЛЬШИЙ бакет, чей floor-декод ``bucket_to_ships`` не превышает реально
+    посланного: round-trip «эксперт -> метка -> декод» НИКОГДА не пере-засылает, а
+    недосылает минимально. Опирается на ту же ``bucket_to_ships``, что и декод, — метка
+    и декод не разъедутся. Дефолт 0, если даже минимальный бакет уже больше ships
+    (неустранимо при g, где floor(0.25·g) > ships, напр. малый залп с большого гарнизона).
+    """
+    best = 0
+    for b in range(N_FRAC_BUCKETS):
+        if bucket_to_ships(b, garrison) <= ships:
+            best = b
+    return best
 
 
 # --- индекс файла (offset+episode на строку), кэш в сайдкар --------------------

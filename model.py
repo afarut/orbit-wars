@@ -57,8 +57,8 @@ class ModelConfig:
 
 
 # доли гарнизона по бакетам и обратный декод bucket -> целое число кораблей.
-# Декод по бину (мин. ошибка квантования, insights/rounding-direction-by-bin.md):
-# 100%->весь гарнизон, 25/75%->floor, 50%->ceil.
+# Округляем долю вниз (floor): не пере-засылаем, ошибка < 1 корабля.
+# 100%->весь гарнизон, 25/50/75%->floor(доля·g).
 def bucket_to_ships(bucket: int, garrison: int) -> int:
     """Бакет доли {0:25,1:50,2:75,3:100}% -> целое число кораблей из гарнизона."""
     if bucket >= 3:
@@ -66,7 +66,7 @@ def bucket_to_ships(bucket: int, garrison: int) -> int:
     if bucket == 0:
         n = int(math.floor(0.25 * garrison))
     elif bucket == 1:
-        n = int(math.ceil(0.50 * garrison))
+        n = int(math.floor(0.50 * garrison))
     else:
         n = int(math.floor(0.75 * garrison))
     return max(1, min(garrison, n))
