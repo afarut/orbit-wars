@@ -21,7 +21,7 @@ import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 # корень пакета orbit_lite в sys.path (нет setup.py)
 _PKG = Path(__file__).resolve().parents[1] / "producer-orbit-wars-utils"
@@ -169,3 +169,48 @@ class GeoEngine:
         if slot_hit < 0:
             return None
         return int(mv.planet_ids[slot_hit])
+
+    def fleet_targets(
+        self, xs: Sequence[float], ys: Sequence[float],
+        angles: Sequence[float], ships: Sequence[float],
+    ) -> Tuple[List[Optional[int]], List[float]]:
+        """Для УЖЕ ЛЕТЯЩИХ флотов: id первой задетой планеты и ETA (ходы) по каждому.
+
+        В отличие от :meth:`planet_at_angle`, старт — текущая позиция флота ``(x, y)``
+        (не «чуть за поверхностью источника»): флот уже в полёте. Источник НЕ
+        исключаем — first-contact идёт вперёд по heading, планета-источник позади; а
+        если орбитальная планета заходит на курс, контакт с ней — реальное событие
+        движка. Один векторный вызов на все флоты.
+
+        Возвращает ``(ids, etas)``: ``ids[i] is None`` и ``etas[i] == inf``, если
+        флот ни в кого не попадает (уходит за край / в солнце / мимо).
+        """
+        mv = self._mv
+        n = len(xs)
+        if n == 0:
+            return [], []
+        H = int(mv.movement_horizon)
+        dt, dev = mv.dtype, mv.device
+        ang = torch.as_tensor(angles, dtype=dt, device=dev)
+        ca, sa = torch.cos(ang), torch.sin(ang)
+        speed = fleet_speed(
+            torch.as_tensor(ships, dtype=dt, device=dev)
+        ).clamp(min=1e-6)
+        contact, eta = _ol_first_contact(
+            launch_x=torch.as_tensor(xs, dtype=dt, device=dev),
+            launch_y=torch.as_tensor(ys, dtype=dt, device=dev),
+            cos_a=ca, sin_a=sa, speed=speed,
+            px=mv.x[: H + 1, :], py=mv.y[: H + 1, :], p_alive0=mv.alive_at(0),
+            radii=mv.radii, H=H, seg_len=None,
+        )
+        pid = mv.planet_ids.tolist()
+        ids: List[Optional[int]] = []
+        etas: List[float] = []
+        for c, e in zip(contact.tolist(), eta.tolist()):
+            if int(c) < 0:
+                ids.append(None)
+                etas.append(float("inf"))
+            else:
+                ids.append(int(pid[int(c)]))
+                etas.append(float(e))
+        return ids, etas

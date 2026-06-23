@@ -87,7 +87,9 @@ def _model_cfg(cfg) -> ModelConfig:
     return ModelConfig(d_model=int(m.d_model), d_k=int(m.d_k), n_layers=int(m.n_layers),
                        n_heads=int(m.n_heads), ffn=int(m.ffn), dropout=float(m.dropout),
                        enc_hidden=int(m.enc_hidden), head_hidden=int(m.head_hidden),
-                       n_frac_buckets=int(m.get("n_frac_buckets", 4)))
+                       n_frac_buckets=int(m.get("n_frac_buckets", 4)),
+                       use_rope=bool(m.get("use_rope", True)),
+                       rope_theta=float(m.get("rope_theta", 50.0)))
 
 
 def _make_writer(cfg):

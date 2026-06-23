@@ -40,6 +40,7 @@ import torch.nn.functional as F
 from core import features, geo_lite
 from core.utils import build_mlp
 from core.features import EncodedObs, FeatureConfig
+from core.rope import RoPEEncoder
 
 
 @dataclass
@@ -54,6 +55,8 @@ class ModelConfig:
     head_hidden: int = 128      # ширина скрытого слоя голов from/to/value/frac
     n_frac_buckets: int = 4     # голова числа кораблей: бакеты доли {25,50,75,100}%
     capture_buffer: int = 2     # (не используется) num_ships = min(garrison, target.ships+1+buffer)
+    use_rope: bool = True       # 2D axial RoPE во внимании (по координатам сущностей)
+    rope_theta: float = 50.0    # база частот RoPE (подтюнено под поле 100×100)
 
 
 # доли гарнизона по бакетам и обратный декод bucket -> целое число кораблей.
@@ -95,13 +98,24 @@ class PolicyValueNet(nn.Module):
                   self.type_sun, self.type_global, self.sun_token):
             nn.init.normal_(p, std=0.02)
 
-        layer = nn.TransformerEncoderLayer(
-            d_model=d, nhead=cfg.n_heads, dim_feedforward=cfg.ffn,
-            dropout=cfg.dropout, activation="gelu", batch_first=True,
-            norm_first=True,
-        )
-        self.encoder = nn.TransformerEncoder(
-            layer, num_layers=cfg.n_layers, enable_nested_tensor=False)
+        # относит. эмбеддинг владельца токена: 0=мы,1=CCW-сосед,2=напротив,3=CW-сосед,4=нейтрал
+        self.owner_emb = nn.Embedding(5, d)
+        nn.init.normal_(self.owner_emb.weight, std=0.02)
+
+        if cfg.use_rope:
+            # кастомный энкодер с 2D axial RoPE: q/k вращаются по координатам токенов
+            self.encoder = RoPEEncoder(
+                d_model=d, nhead=cfg.n_heads, dim_feedforward=cfg.ffn,
+                num_layers=cfg.n_layers, dropout=cfg.dropout, theta=cfg.rope_theta)
+        else:
+            # бейзлайн: стандартный set-инвариантный энкодер без позиций
+            layer = nn.TransformerEncoderLayer(
+                d_model=d, nhead=cfg.n_heads, dim_feedforward=cfg.ffn,
+                dropout=cfg.dropout, activation="gelu", batch_first=True,
+                norm_first=True,
+            )
+            self.encoder = nn.TransformerEncoder(
+                layer, num_layers=cfg.n_layers, enable_nested_tensor=False)
 
         # головы рёбер + value-голова
         self.mlp_from = build_mlp(d, [cfg.head_hidden], cfg.d_k)
@@ -119,11 +133,15 @@ class PolicyValueNet(nn.Module):
         ``frac_pairs=(b_idx, s_idx, t_idx)`` (teacher forcing) — если переданы, голова
         числа кораблей считается ВНУТРИ forward (важно для DDP: иначе градиенты
         ``mlp_frac`` не синхронизируются) и кладётся в ``frac_logits`` [N,4]."""
-        planet_tok = self.enc_planet(enc.planet_feats) + self.type_planet
-        comet_tok = self.enc_comet(enc.comet_feats) + self.type_comet
-        fleet_tok = self.enc_fleet(enc.fleet_feats) + self.type_fleet
+        # type-эмбеддинг (по типу токена) + owner-эмбеддинг (относит. слот владельца)
+        planet_tok = (self.enc_planet(enc.planet_feats) + self.type_planet
+                      + self.owner_emb(enc.planet_owner_slot))
+        comet_tok = (self.enc_comet(enc.comet_feats) + self.type_comet
+                     + self.owner_emb(enc.comet_owner_slot))
+        fleet_tok = (self.enc_fleet(enc.fleet_feats) + self.type_fleet
+                     + self.owner_emb(enc.fleet_owner_slot))
         B = planet_tok.shape[0]
-        sun_tok = (self.sun_token + self.type_sun).expand(B, 1, -1)
+        sun_tok = (self.sun_token + self.type_sun).expand(B, 1, -1)   # солнце — без owner
         global_tok = (self.enc_global(enc.global_feats) + self.type_global).unsqueeze(1)
 
         x = torch.cat([planet_tok, comet_tok, fleet_tok, sun_tok, global_tok], dim=1)
@@ -133,7 +151,11 @@ class PolicyValueNet(nn.Module):
         pad_mask = torch.cat(
             [~enc.planet_mask, ~enc.comet_mask, ~enc.fleet_mask, always, always], dim=1
         )
-        h = self.encoder(x, src_key_padding_mask=pad_mask)
+        if self.cfg.use_rope:
+            positions, apply_mask = self._token_positions(enc, B, x.device, x.dtype)
+            h = self.encoder(x, positions, apply_mask, src_key_padding_mask=pad_mask)
+        else:
+            h = self.encoder(x, src_key_padding_mask=pad_mask)
 
         P = planet_tok.shape[1]
         C = comet_tok.shape[1]
@@ -171,6 +193,25 @@ class PolicyValueNet(nn.Module):
             out["frac_logits"] = self.mlp_frac(torch.cat([h_src, h_tgt], dim=-1))  # [N, 4]
         return out
 
+    # -- позиции токенов для RoPE ----------------------------------------------
+    def _token_positions(self, enc: EncodedObs, B: int, device, dtype):
+        """Координаты [B,N,2] и apply_mask [B,N] в порядке токенов
+        (планеты→кометы→флоты→солнце→глобал, как в forward). Координаты берутся из
+        каналов фич 0,1 (нормированы на BOARD). Солнце — центр поля; глобал-CLS
+        непозиционный (apply_mask=False -> не вращается). Паддинг даёт (0,0), но он
+        закрыт pad_mask в attention."""
+        pos_planet = enc.planet_feats[..., 0:2] * features.BOARD
+        pos_comet = enc.comet_feats[..., 0:2] * features.BOARD
+        pos_fleet = enc.fleet_feats[..., 0:2] * features.BOARD
+        center = torch.tensor(features.CENTER, device=device, dtype=pos_planet.dtype)
+        pos_center = center.view(1, 1, 2).expand(B, 1, 2)         # солнце и (заглушка) глобал
+        positions = torch.cat(
+            [pos_planet, pos_comet, pos_fleet, pos_center, pos_center], dim=1).to(dtype)
+        N = positions.shape[1]
+        apply_mask = torch.ones(B, N, dtype=torch.bool, device=device)
+        apply_mask[:, -1] = False                                # глобал-CLS не вращаем
+        return positions, apply_mask
+
     # -- загрузка чекпойнта -----------------------------------------------------
     @classmethod
     def load(cls, path: str, map_location="cpu"):
@@ -180,6 +221,8 @@ class PolicyValueNet(nn.Module):
         форму угадывать не нужно. Возвращает кортеж, т.к. ``act`` ждёт ``cfg``.
         """
         ckpt = torch.load(path, map_location=map_location, weights_only=False)
+        # легаси-чекпойнты (без ключа) обучены стандартным энкодером -> use_rope=False
+        ckpt["model_cfg"].setdefault("use_rope", False)
         mcfg = ModelConfig(**ckpt["model_cfg"])
         fcfg = FeatureConfig(**ckpt["feature_cfg"])
         net = cls(mcfg)
@@ -200,14 +243,16 @@ class PolicyValueNet(nn.Module):
         Колонка hold всегда валидна, так что у каждого источника есть ≥1 вариант.
         """
         device = next(self.parameters()).device
-        enc = features.encode(obs, cfg=cfg, device=device)
+        # geo_lite-движок строим один раз: и для фич назначения флота (в encode),
+        # и для угла декода ниже — иначе PlanetMovement строился бы дважды за ход.
+        geo = geo_lite.GeoEngine(obs, device=device)
+        enc = features.encode(obs, cfg=cfg, device=device, geo=geo)
         out = self.forward(enc)
         logits = out["logits"][0]                # [M, M+1]
         h_place = out["h_place"][0]              # [M, d]
         hold_idx = logits.shape[1] - 1
 
         moves: List[list] = []
-        geo = None                               # geo_lite-движок строим лениво (один раз за act)
         for i in enc.owned_idx:
             if decode == "sample":
                 probs = torch.softmax(logits[i] / max(1e-6, temperature), dim=-1)
@@ -231,8 +276,6 @@ class PolicyValueNet(nn.Module):
             else:
                 bucket = int(torch.argmax(fl).item())
             num_ships = bucket_to_ships(bucket, garrison)
-            if geo is None:
-                geo = geo_lite.GeoEngine(obs, player=enc.player, device=device)
             angle, _eta, _hit = geo.intercept(src.id, tgt.id, num_ships)
             moves.append([src.id, float(angle), num_ships])
         return moves

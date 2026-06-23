@@ -33,8 +33,11 @@ COMET_SPAWN_STEPS: Tuple[int, ...] = (50, 150, 250, 350, 450)
 # --- размерности фич (контракт с model.py) ------------------------------------
 PLANET_FEAT_DIM: int = 20
 COMET_FEAT_DIM: int = 25          # база планеты (20) + 5 доп. фич кометы
-FLEET_FEAT_DIM: int = 10
+FLEET_FEAT_DIM: int = 14          # база (10) + 4 фичи назначения (dest dx/dy, eta, флаг)
 GLOBAL_FEAT_DIM: int = 11
+
+# нормировка ETA флота (ходы); = geo_lite.DEFAULT_HORIZON, покрывает самый долгий перелёт
+FLEET_ETA_NORM: float = 150.0
 
 
 @dataclass
@@ -69,6 +72,9 @@ class EncodedObs:
     comet_mask: torch.Tensor     # [1, max_comets]
     fleet_feats: torch.Tensor    # [1, max_fleets, FLEET_FEAT_DIM]
     fleet_mask: torch.Tensor     # [1, max_fleets]
+    planet_owner_slot: torch.Tensor   # [1, max_planets]  long: относит. слот владельца (0..4)
+    comet_owner_slot: torch.Tensor    # [1, max_comets]   long
+    fleet_owner_slot: torch.Tensor    # [1, max_fleets]   long
     global_feats: torch.Tensor   # [1, GLOBAL_FEAT_DIM]
     places: List[Optional[PlaceInfo]]   # длина == max_planets + max_comets
     owned_idx: List[int]                # индексы мест, которыми мы владеем (ships > 0)
@@ -103,6 +109,35 @@ def _owner_flags(owner: int, player: int) -> Tuple[float, float, float]:
     if owner == -1:
         return 0.0, 0.0, 1.0
     return 0.0, 1.0, 0.0
+
+
+# owner id -> позиция по кругу (CCW, шаги 90°). Выведено из движка orbit_wars: owner j
+# спавнится на копии группы, повёрнутой на j·90°; на всех сидах rel-позиция = {0:0,1:1,2:3,3:2}.
+# Пары «напротив» (диагональ): id0↔id3, id1↔id2.
+_OWNER_POS: Dict[int, int] = {0: 0, 1: 1, 2: 3, 3: 2}
+
+
+def _n_players(planets: List[list], fleets: List[list]) -> int:
+    """Число игроков: 4, если на доске виден owner id >= 2, иначе 2. Эвристика — в позднем
+    4p с выбитыми игроками 2/3 может ошибиться на 2 (редко, слот всё равно «враг»)."""
+    max_owner = -1
+    for p in planets:
+        max_owner = max(max_owner, int(p[1]))
+    for f in fleets:
+        max_owner = max(max_owner, int(f[1]))
+    return 4 if max_owner >= 2 else 2
+
+
+def _owner_slot(owner: int, player: int, n_players: int) -> int:
+    """Относительный слот владельца для эмбеддинга: 0=мы, 1=CCW-сосед, 2=напротив,
+    3=CW-сосед, 4=нейтрал. В 1v1 враг всегда напротив (диагональ)."""
+    if owner == -1:
+        return 4
+    if owner == player:
+        return 0
+    if n_players == 2:
+        return 2
+    return (_OWNER_POS[owner] - _OWNER_POS[player]) % 4
 
 
 def _build_target(
@@ -156,6 +191,7 @@ def _comet_extras(target: Target) -> List[float]:
 def _fleet_features(
     owner: int, x: float, y: float, angle: float, ships: float, player: int,
     my_planet_xyr: List[Tuple[float, float, float]],
+    dest_xy: Optional[Tuple[float, float]], eta: float,
 ) -> List[float]:
     mine = 1.0 if owner == player else 0.0
     enemy = 1.0 if (owner != player and owner != -1) else 0.0
@@ -171,10 +207,20 @@ def _fleet_features(
             if perp < pr + 3.0:
                 incoming = 1.0
                 break
+    # фичи назначения: на какую планету летит (центр цели отн. флота) и когда долетит.
+    # Нет цели (флот мимо/в край/в солнце) -> нули + has_target=0, чтобы не врать «(0,0), eta=0».
+    if dest_xy is not None:
+        dx = (dest_xy[0] - x) / 50.0
+        dy = (dest_xy[1] - y) / 50.0
+        eta_n = min(eta, FLEET_ETA_NORM) / FLEET_ETA_NORM
+        has_target = 1.0
+    else:
+        dx = dy = eta_n = has_target = 0.0
     return [
         x / BOARD, y / BOARD, mine, enemy,
         ships / 100.0, math.log1p(max(0.0, ships)) / 5.0,
         hx, hy, intercept.fleet_speed(ships) / 6.0, incoming,
+        dx, dy, eta_n, has_target,
     ]
 
 
@@ -183,9 +229,7 @@ def _global_features(obs: Any, planets: List[list], fleets: List[list],
     step = int(_get(obs, "step", 0) or 0)
     remaining = EPISODE_STEPS - step
 
-    owners = [int(p[1]) for p in planets if int(p[1]) >= 0]
-    owners += [int(f[1]) for f in fleets if int(f[1]) >= 0]
-    n_players = 4 if (owners and max(owners) >= 2) else 2
+    n_players = _n_players(planets, fleets)
 
     totals: Dict[int, float] = {}
     for p in planets:
@@ -217,14 +261,20 @@ def _global_features(obs: Any, planets: List[list], fleets: List[list],
 
 
 def encode(obs: Any, cfg: FeatureConfig = FeatureConfig(),
-           device: Optional[torch.device] = None) -> EncodedObs:
-    """Закодировать одно наблюдение в паддингованные тензоры + метаданные для декода."""
+           device: Optional[torch.device] = None, geo: Any = None) -> EncodedObs:
+    """Закодировать одно наблюдение в паддингованные тензоры + метаданные для декода.
+
+    ``geo`` — опциональный :class:`core.geo_lite.GeoEngine` для этого ``obs`` (фичи
+    назначения флота). Если не передан и флоты есть — строится лениво (на инференсе
+    ``model.act`` передаёт уже готовый, чтобы не строить ``PlanetMovement`` дважды).
+    """
     player = int(_get(obs, "player", 0) or 0)
     angular_velocity = float(_get(obs, "angular_velocity", 0.0) or 0.0)
     planets = list(_get(obs, "planets", []) or [])
     fleets = list(_get(obs, "fleets", []) or [])
     comet_ids = set(int(i) for i in (_get(obs, "comet_planet_ids", []) or []))
     comet_map = _comet_path_map(obs)
+    n_players = _n_players(planets, fleets)
 
     my_planet_xyr = [
         (float(p[2]), float(p[3]), float(p[4]))
@@ -236,6 +286,8 @@ def encode(obs: Any, cfg: FeatureConfig = FeatureConfig(),
     comet_rows: List[List[float]] = []
     planet_places: List[PlaceInfo] = []
     comet_places: List[PlaceInfo] = []
+    planet_owner_slots: List[int] = []
+    comet_owner_slots: List[int] = []
 
     for p in planets:
         pid, owner, x, y, radius, ships, production = (
@@ -252,18 +304,41 @@ def encode(obs: Any, cfg: FeatureConfig = FeatureConfig(),
                          production=production, radius=radius,
                          kind="comet" if is_comet else "planet",
                          is_mine=(owner == player), target=target)
+        slot = _owner_slot(owner, player, n_players)
         if is_comet:
             comet_rows.append(base + _comet_extras(target))
             comet_places.append(info)
+            comet_owner_slots.append(slot)
         else:
             planet_rows.append(base)
             planet_places.append(info)
+            planet_owner_slots.append(slot)
+
+    # назначение каждого флота (planet-id + ETA) через geo_lite first-contact
+    fleet_dest_xy: List[Optional[Tuple[float, float]]] = [None] * len(fleets)
+    fleet_eta: List[float] = [float("inf")] * len(fleets)
+    if fleets:
+        if geo is None:
+            from .geo_lite import GeoEngine
+            geo = GeoEngine(obs, player=player,
+                            device=str(device) if device is not None else "cpu")
+        pid_xy = {int(p[0]): (float(p[2]), float(p[3])) for p in planets}
+        dest_ids, etas = geo.fleet_targets(
+            [float(f[2]) for f in fleets], [float(f[3]) for f in fleets],
+            [float(f[4]) for f in fleets], [float(f[6]) for f in fleets],
+        )
+        for i, (did, e) in enumerate(zip(dest_ids, etas)):
+            if did is not None and did in pid_xy:
+                fleet_dest_xy[i] = pid_xy[did]
+                fleet_eta[i] = e
 
     fleet_rows = [
         _fleet_features(int(f[1]), float(f[2]), float(f[3]), float(f[4]),
-                        float(f[6]), player, my_planet_xyr)
-        for f in fleets
+                        float(f[6]), player, my_planet_xyr,
+                        fleet_dest_xy[i], fleet_eta[i])
+        for i, f in enumerate(fleets)
     ]
+    fleet_owner_slots = [_owner_slot(int(f[1]), player, n_players) for f in fleets]
 
     global_feats, _ = _global_features(obs, planets, fleets, player)
 
@@ -276,9 +351,18 @@ def encode(obs: Any, cfg: FeatureConfig = FeatureConfig(),
             mask[i] = True
         return arr, mask
 
+    def _pad_idx(vals: List[int], n: int):
+        arr = np.zeros((n,), dtype=np.int64)   # pad-слот 0 безвреден: токен закрыт pad_mask
+        for i, v in enumerate(vals[:n]):
+            arr[i] = v
+        return arr
+
     p_arr, p_mask = _pad(planet_rows, cfg.max_planets, PLANET_FEAT_DIM)
     c_arr, c_mask = _pad(comet_rows, cfg.max_comets, COMET_FEAT_DIM)
     f_arr, f_mask = _pad(fleet_rows, cfg.max_fleets, FLEET_FEAT_DIM)
+    p_slot = _pad_idx(planet_owner_slots, cfg.max_planets)
+    c_slot = _pad_idx(comet_owner_slots, cfg.max_comets)
+    f_slot = _pad_idx(fleet_owner_slots, cfg.max_fleets)
 
     # вектор places выровнен с H_place = [планеты(max_planets), кометы(max_comets)]
     places: List[Optional[PlaceInfo]] = [None] * (cfg.max_planets + cfg.max_comets)
@@ -297,6 +381,8 @@ def encode(obs: Any, cfg: FeatureConfig = FeatureConfig(),
         planet_feats=_t(p_arr), planet_mask=_t(p_mask),
         comet_feats=_t(c_arr), comet_mask=_t(c_mask),
         fleet_feats=_t(f_arr), fleet_mask=_t(f_mask),
+        planet_owner_slot=_t(p_slot), comet_owner_slot=_t(c_slot),
+        fleet_owner_slot=_t(f_slot),
         global_feats=torch.from_numpy(np.asarray(global_feats, dtype=np.float32))
         .unsqueeze(0).to(device) if device else
         torch.from_numpy(np.asarray(global_feats, dtype=np.float32)).unsqueeze(0),

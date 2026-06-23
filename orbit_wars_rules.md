@@ -75,7 +75,7 @@ Players start with a **single home planet** and compete to control the map by se
 ### Board Layout
 - **Board**: 100×100 continuous space, origin at top-left.
 - **Sun**: centered at **(50, 50)**, radius **10**. Fleets that cross the sun are **destroyed**.
-- **Symmetry**: all planets/comets placed with **4-fold mirror symmetry** around center: `(x, y)`, `(100-x, y)`, `(x, 100-y)`, `(100-x, 100-y)`. Ensures fairness regardless of start position.
+- **Symmetry**: all planets/comets placed in groups of 4 around center; the engine emits the copies as `(x, y)`, `(100-x, y)`, `(x, 100-y)`, `(100-x, 100-y)`, but with the first copy transposed — so the four copies are effectively **4-fold rotational symmetry (90° turns)**, not mirror images (verified empirically: home angles are exact multiples of 90°). Ensures fairness regardless of start position.
 
 ### Planets
 Represented as `[id, owner, x, y, radius, ships, production]`.
@@ -91,8 +91,11 @@ Represented as `[id, owner, x, y, radius, ships, production]`.
 
 #### Home Planets
 - One symmetric group is randomly chosen as starting planets.
-- **2-player**: players start on diagonally opposite planets (Q1 and Q4).
-- **4-player**: each player gets one planet from the group.
+- **2-player**: players `0,1` start on diagonally opposite copies (180° apart).
+- **4-player**: `owner j` gets copy `base+j`. Due to the rotational layout the angular order
+  of copies by id is `0,1,3,2` (steps of 90°), so the **opposite** (diagonal, 180°) pairs are
+  `id0↔id3` and `id1↔id2` (NOT id0↔id2). This drives the relative-owner embedding in
+  `core/features.py` (`_OWNER_POS = {0:0, 1:1, 2:3, 3:2}`).
 - Home planets start with **10 ships**.
 
 ### Fleets

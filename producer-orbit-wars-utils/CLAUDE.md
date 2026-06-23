@@ -1,99 +1,109 @@
 # CLAUDE.md — producer-orbit-wars-utils
 
-Guidance for Claude Code when working in this directory.
+Указания для Claude Code при работе в этой директории.
 
-## What this is
+## Что это
 
-`orbit_lite` — a self-contained **heuristic** agent for the Kaggle **Orbit Wars** competition,
-written with `torch` + the standard library only. It is a *forward-simulator + greedy flow-diff
-planner* ("speed-first flow-diff producer"): it forecasts the game state assuming no action, scores
-hypothetical launches by their effect on each player's net ship flow, and greedily commits the best
-non-conflicting launches.
+`orbit_lite` — самодостаточный **эвристический** агент для Kaggle-соревнования **Orbit Wars**,
+написанный на `torch` + стандартной библиотеке. Это *форвард-симулятор + жадный flow-diff
+планировщик* («speed-first flow-diff producer»): прогнозирует состояние игры при бездействии,
+оценивает гипотетические запуски по их влиянию на чистый поток кораблей каждого игрока и жадно
+коммитит лучшие неконфликтующие запуски.
 
-This is a **different approach** from the parent repo (`../`), which is an SFT / behavioral-cloning
-neural net (`model.py` + `core/`). Nothing here is trained — it is pure rule-based search faithful to
-the game engine. The two agents are independent; this package does not import from the parent repo.
+Это **другой подход**, нежели у родительского репо (`../`), где SFT / behavioral-cloning нейросеть
+(`model.py` + `core/`). Здесь ничего не обучается — это чистый rule-based поиск, верный игровому
+движку. Агенты независимы; этот пакет не импортирует родительское репо.
 
-Comments and docstrings in the code are written in **English** here; keep that when editing. (Note:
-the parent repo's convention is Russian — this package is the exception.)
+Комментарии и докстринги в коде здесь — на **английском**; держись этого при правках. (Сам этот файл
+CLAUDE.md ведётся на русском, как и доки родительского репо; язык кода и язык доков — разные вещи.
+В родительском репо код на русском — этот пакет в коде исключение.)
 
-## Status / incompleteness (important)
+## Статус / неполнота (важно)
 
-This directory holds only the `orbit_lite` package plus `USAGE.md`. Two pieces referenced by the code
-and docs are **not present**:
+В самой этой директории — только пакет `orbit_lite` плюс `USAGE.md`. Два куска, на которые ссылаются
+код и доки, здесь **отсутствуют**:
 
-- **`main.py`** — the Kaggle entry point with `agent(obs) -> [[from_planet_id, angle, ships], ...]`.
-  `USAGE.md` tells the notebook to load it from `/kaggle/input/orbit-lite/main.py`, but it is missing.
-- **The top-level orchestrator** — `planner_core.py` supplies the building blocks (shortlist, score,
-  select, regroup, payload), but the `plan(obs) -> payload` function that sequences them
+- **`main.py`** — Kaggle-точка входа с `agent(obs) -> [[from_planet_id, angle, ships], ...]`. `USAGE.md`
+  велит ноутбуку грузить его из `/kaggle/input/orbit-lite/main.py`, но его тут нет.
+- **Оркестратор верхнего уровня** — `planner_core.py` даёт строительные блоки (shortlist, score,
+  select, regroup, payload), но функция `plan(obs) -> payload`, которая их связывает
   (`build_target_shortlist → score_candidates → _greedy_select → _plan_regroup →
-  entries_to_sparse_payload`) lives in a driver module that was not included.
-- A config dataclass referenced by `planner_core` (`config.max_offensive_targets`,
-  `regroup_*`, `roi_threshold`, etc.) is also external to this archive.
+  entries_to_sparse_payload`), живёт в драйвер-модуле, который сюда не положили.
+- Dataclass-конфиг, на который ссылается `planner_core` (`config.max_offensive_targets`,
+  `regroup_*`, `roi_threshold` и т.д.), тоже внешний по отношению к этому архиву.
 
-If asked to run the agent end-to-end, the driver + `main.py` + config must be reconstructed first.
+**Драйвер уже восстановлен в родительском репо**: `../agents/producer_hybrid.py` («Producer Hybrid v4»)
+дословно переносит ячейку `main.py` из ноутбука — связывает все блоки `orbit_lite` (импортирует
+`build_target_shortlist`, `score_candidates`, `_greedy_select`, `_plan_regroup`,
+`entries_to_sparse_payload` и пр.) и добавляет класс `ProducerHybridAgent` под интерфейс `eval`. Так
+что прогнать пайплайн end-to-end можно через эвал родительского репо (`scripted:producer_hybrid` /
+`configs/pool/scripted.yaml`). Если же нужен именно отдельный Kaggle-`main.py` для этой директории — его
+(вместе с конфигом) придётся собрать заново по образцу `producer_hybrid.py`.
 
-## The planning pipeline (as assembled from these blocks)
+## Конвейер планирования (как собирается из этих блоков)
 
-Each turn the agent conceptually does:
+Каждый ход агент концептуально делает:
 
-1. **Forecast** a "do-nothing" projection of every planet's owner/ship count over a horizon `H` (~20),
-   plus future planet/comet positions and tracked in-flight fleets (`movement.py`).
-2. **Build a target shortlist** (`planner_core.build_target_shortlist`): nearest enemy/neutral planets
-   (offensive) ∪ own planets the projection shows flipping to an enemy (defensive, by urgency).
-3. **Score candidate launches** by the *competitive* metric `Δnet_me − Σ Δnet_opponents`, computed
-   with the exact sparse flow projector (`garrison_launch.sparse_launch_flow_delta`).
-4. **Greedily select** non-conflicting waves (`planner_core._greedy_select`): best score first, above an
-   ROI threshold, one wave per target, debiting a per-planet ship budget, with a source/reinforce mutex.
-5. **Regroup leftovers** (`planner_core._plan_regroup`): marshal uncommitted ships along a pressure
-   gradient toward more-threatened owned planets.
-6. **Emit the sparse payload** (`planner_core.entries_to_sparse_payload`) → decoded to a move list by
-   `adapter.sparse_action_row_to_moves`.
+1. **Прогноз** «do-nothing» проекции владельца/числа кораблей каждой планеты на горизонт `H` (~20), плюс
+   будущие позиции планет/комет и трекинг летящих флотов (`movement.py`).
+2. **Сборка шортлиста целей** (`planner_core.build_target_shortlist`): ближайшие вражеские/нейтральные
+   планеты (атака) ∪ свои планеты, которые по проекции переходят к врагу (оборона, по срочности).
+3. **Оценка кандидатов-запусков** по *конкурентной* метрике `Δnet_me − Σ Δnet_opponents`, посчитанной
+   точным разреженным flow-проектором (`garrison_launch.sparse_launch_flow_delta`).
+4. **Жадный выбор** неконфликтующих волн (`planner_core._greedy_select`): лучший скор первым, выше
+   ROI-порога, одна волна на цель, списывая по-планетный бюджет кораблей, с мьютексом источник/подкрепление.
+5. **Перегруппировка остатков** (`planner_core._plan_regroup`): сгонять незакоммиченные корабли вдоль
+   градиента давления к более угрожаемым своим планетам.
+6. **Выдача разреженного payload** (`planner_core.entries_to_sparse_payload`) → декодируется в список
+   ходов через `adapter.sparse_action_row_to_moves`.
 
-## Module map
+## Карта модулей
 
-Runtime / submission layer (numpy-free; `torch` + stdlib):
+Runtime / сабмишн-слой (без numpy; `torch` + stdlib):
 
-- `adapter.py` — obs-dict ↔ tensor bridge; sparse payload → `[from_planet_id, angle, ships]` move list,
-  with ownership / ship-count validation.
-- `constants.py` — engine physics (`BOARD_SIZE=100`, `SUN_RADIUS=10`, `MAX_SHIP_SPEED=6`), comet schedule,
-  and early-termination thresholds (calibrated on 535 replays).
-- `obs.py` — parse raw `[P,7]`/`[F,7]` tensors into the named `ParsedObs` (ownership masks, orbital
-  params). Field indices live *only* here.
-- `geometry.py` — fleet-speed formula `1+(MAX_SHIP_SPEED-1)·(log(ships)/log(1000))^1.5` via a LUT with a
-  per-(device,dtype) cache (avoids a CUDA host-sync per call).
-- `movement.py` (largest) — the forward predictor: orbital mechanics, comet paths, fleet tracking by
-  engine fleet-id, swept-circle collision (planets / sun / OOB), and the production→combat recurrence
-  that yields `PlanetGarrisonStatus`. Handles fleet-id reconciliation (the engine assigns IDs the agent
-  can't know at action time → stash-and-match against the next obs).
-- `distance_cache.py` — cross-time distances `dist(s@0, t@k)` for moving-target reachability.
-- `movement_aiming.py` / `aiming.py` — swept-pair hit test; obs `step` → orbit phase index (`max(0, step-1)`).
-- `intercept_aim.py` — lead-angle aim at an orbiting target: continuous fixed-point intercept time +
-  analytic first-contact verification matching the engine's verdict exactly.
-- `garrison_launch.py` — exact per-player net-ship flow projector ("if I launch these, how does each
-  player's produced − combat-lost change?"); recomputes only the planets a launch touches.
-- `movement_step.py` — `LaunchEntries` / `PlannedLaunches` tables, concat, duplicate-angle
-  disambiguation, binding launches to the movement cache.
-- `planner_core.py` — the heuristics: target scoring, `capture_floor` (ships needed to take a target),
-  `safe_drain` (never leave a source losable within the horizon), `_greedy_select`, `_plan_regroup`,
-  payload formatting.
+- `adapter.py` — мост obs-dict ↔ тензоры; разреженный payload → список ходов
+  `[from_planet_id, angle, ships]`, с валидацией владения / числа кораблей.
+- `constants.py` — физика движка (`BOARD_SIZE=100`, `SUN_RADIUS=10`, `MAX_SHIP_SPEED=6`), расписание
+  комет и пороги ранней терминации (калибровка на 535 реплеях).
+- `obs.py` — парс сырых тензоров `[P,7]`/`[F,7]` в именованный `ParsedObs` (маски владения, орбитальные
+  параметры). Индексы полей живут *только* здесь.
+- `geometry.py` — формула скорости флота `1+(MAX_SHIP_SPEED-1)·(log(ships)/log(1000))^1.5` через LUT с
+  кэшем по (device, dtype) (избегает CUDA host-sync на каждый вызов).
+- `movement.py` (самый большой) — форвард-предиктор: орбитальная механика, траектории комет, трекинг
+  флотов по engine fleet-id, swept-circle коллизии (планеты / солнце / OOB) и рекуррентность
+  продакшен→бой, дающая `PlanetGarrisonStatus`. Разруливает сверку fleet-id (движок назначает ID,
+  которых агент не знает в момент действия → stash-and-match со следующим obs).
+- `distance_cache.py` — кросс-временные расстояния `dist(s@0, t@k)` для достижимости движущихся целей.
+- `movement_aiming.py` / `aiming.py` — swept-pair проверка попадания; obs `step` → индекс фазы орбиты
+  (`max(0, step-1)`).
+- `intercept_aim.py` — lead-угол по орбитальной цели: непрерывное fixed-point время перехвата +
+  аналитическая проверка первого контакта, в точности совпадающая с вердиктом движка.
+- `garrison_launch.py` — точный по-игроку проектор чистого потока кораблей («если я запущу это, как
+  изменится у каждого игрока произведено − потеряно в бою?»); пересчитывает только планеты, которых
+  касается запуск.
+- `movement_step.py` — таблицы `LaunchEntries` / `PlannedLaunches`, конкат, разруливание дублей по углу,
+  привязка запусков к кэшу движения.
+- `planner_core.py` — эвристики: скоринг целей, `capture_floor` (сколько кораблей нужно на захват),
+  `safe_drain` (не оставлять источник проигрываемым в горизонте), `_greedy_select`, `_plan_regroup`,
+  форматирование payload.
 
-## Conventions to preserve when editing
+## Конвенции, которые надо сохранять при правках
 
-- **CPU≡CUDA determinism**: all argmax/topk use ascending-index tie-breaks (`_stable_argmax`,
-  `_stable_topk_indices`) so the agent picks identical moves on any device. Do not introduce
-  nondeterministic reductions.
-- **Engine faithfulness**: collision order (planet hit resolves before OOB/sun in the same step),
-  lowest-slot same-step tie-break, and the launch surface offset (`0.1`) all mirror the real engine so
-  the forecast matches simulation. Changing physics here silently desyncs the planner.
-- **Single-game shapes**: planets are `[P,7]`, no batch axis. Some docstrings say `[*prefix, ...]`, but
-  the implementation is single-game; the "prefix" is only candidate/launch reshaping.
-- **Frame conventions** (off-by-one hot-spot): `k=0` is the observation frame, `k=1..H` future steps;
-  `fleet_buckets` index `j` ↔ arrival step `k=j+1` (eta=1 → index 0); garrison caches carry an extra
-  `k=0` slot (`H+1` time axis).
+- **CPU≡CUDA детерминизм**: все argmax/topk используют tie-break по возрастанию индекса
+  (`_stable_argmax`, `_stable_topk_indices`), чтобы агент выбирал идентичные ходы на любом девайсе. Не
+  вводи недетерминированные редукции.
+- **Верность движку**: порядок коллизий (попадание в планету резолвится раньше OOB/солнца в том же
+  шаге), tie-break по наименьшему слоту в одном шаге и оффсет поверхности запуска (`0.1`) — всё зеркалит
+  настоящий движок, чтобы прогноз совпадал с симуляцией. Менять физику здесь — молча рассинхронить
+  планировщик.
+- **Формы одной игры**: планеты `[P,7]`, без batch-оси. Некоторые докстринги говорят `[*prefix, ...]`,
+  но реализация — single-game; «prefix» это лишь reshaping кандидатов/запусков.
+- **Конвенции кадра** (off-by-one hot-spot): `k=0` — кадр наблюдения, `k=1..H` — будущие шаги;
+  `fleet_buckets` индекс `j` ↔ шаг прибытия `k=j+1` (eta=1 → индекс 0); garrison-кэши несут лишний слот
+  `k=0` (ось времени `H+1`).
 
-## No test harness here
+## Тестовой обвязки здесь нет
 
-There is no `smoke_test.py` / pytest in this directory. When touching the physics or planner, validate
-against the parent repo's engine (`kaggle_environments` `orbit_wars` 1.0.9, per `../CLAUDE.md`) or
-reconstruct the missing driver to exercise the pipeline end-to-end.
+В этой директории нет `smoke_test.py` / pytest. Трогая физику или планировщик, проверяй против движка
+родительского репо (`kaggle_environments` `orbit_wars` 1.0.9, см. `../CLAUDE.md`) — например, гоняя
+`../agents/producer_hybrid.py` (восстановленный драйвер) через эвал.

@@ -59,15 +59,16 @@ OWNER_I, SHIPS_I = 1, 5   # индексы полей планеты: [id, owner
 
 
 def _ship_bucket(ships: float, garrison: float) -> int:
-    """Число ships -> бакет доли {0:25,1:50,2:75,3:100}% (для статистики прогона).
+    """Число ships -> бакет доли {0:25,1:50,2:75,3:100}% или -1 (неточно), для статистики.
 
-    Совпадает с боевым лейблом ``sft.dataset.ship_bucket`` по построению: наибольший
-    бакет, чей floor-декод ``bucket_to_ships`` не превышает посланного (цепочка не
-    пере-засылает). Опирается на ту же ``bucket_to_ships``, что декод и лейбл — не разъедутся.
+    Совпадает с боевым лейблом ``sft.dataset.ship_bucket``: метку даём ТОЛЬКО при ТОЧНОМ
+    совпадении ``ships == bucket_to_ships(b, garrison)``, иначе -1 (вылет не воспроизводим
+    floor-декодом -> в обучении уходит в IGNORE). Тай-брейк — наибольший бакет. Опирается
+    на ту же ``bucket_to_ships``, что декод и боевой лейбл — не разъедутся.
     """
-    best = 0
+    best = -1
     for b in range(4):
-        if bucket_to_ships(b, garrison) <= ships:
+        if bucket_to_ships(b, garrison) == ships:
             best = b
     return best
 
@@ -105,13 +106,19 @@ def resolve_sample(sample: dict, horizon: int = geo_lite.DEFAULT_HORIZON) -> dic
     n_owned = sum(1 for p in planets
                   if int(p[OWNER_I]) == player and float(p[SHIPS_I]) > 0)
 
-    # гистограмма бакетов доли по резолвнутым вылетам (ориентир для frac_weights)
+    # гистограмма бакетов доли по резолвнутым вылетам (ориентир для frac_weights);
+    # n_inexact — вылеты, не легшие точно на бакет (в обучении -> IGNORE, сигнала не дают)
     garrison = {int(p[0]): float(p[SHIPS_I]) for p in planets}
     buckets = [0, 0, 0, 0]
+    n_inexact = 0
     for fid, (_did, sh) in sends.items():
         g = garrison.get(fid, 0.0)
         if g > 0:
-            buckets[_ship_bucket(sh, g)] += 1
+            b = _ship_bucket(sh, g)
+            if b < 0:
+                n_inexact += 1
+            else:
+                buckets[b] += 1
 
     meta = sample.get("meta") or {}
     out = {
@@ -134,6 +141,7 @@ def resolve_sample(sample: dict, horizon: int = geo_lite.DEFAULT_HORIZON) -> dic
         "n_unresolved": len(unresolved),
         "n_owned": n_owned,
         "buckets": buckets,
+        "n_inexact": n_inexact,
     }
     return out
 
@@ -145,7 +153,8 @@ def run(in_path: str, out_path: str, limit: Optional[int] = None,
     agg = {"states": 0, "hold_states": 0, "action_states": 0, "multi_states": 0,
            "sends_total": 0, "sends_resolved": 0, "sends_unresolved": 0,
            "owned_sources": 0, "send_sources": 0,
-           "bucket_25": 0, "bucket_50": 0, "bucket_75": 0, "bucket_100": 0}
+           "bucket_25": 0, "bucket_50": 0, "bucket_75": 0, "bucket_100": 0,
+           "bucket_inexact": 0}
 
     with open(in_path, "r", encoding="utf-8") as fin, \
             open(out_path, "w", encoding="utf-8") as fout:
@@ -169,6 +178,7 @@ def run(in_path: str, out_path: str, limit: Optional[int] = None,
             b = st["buckets"]
             agg["bucket_25"] += b[0]; agg["bucket_50"] += b[1]
             agg["bucket_75"] += b[2]; agg["bucket_100"] += b[3]
+            agg["bucket_inexact"] += st["n_inexact"]
             fout.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
     agg["hold_sources"] = agg["owned_sources"] - agg["send_sources"]
@@ -204,10 +214,14 @@ def _report_buckets(agg: Dict[str, int]) -> None:
     """Гистограмма бакетов доли + ориентир для train.frac_weights (обратная частота)."""
     counts = [agg["bucket_25"], agg["bucket_50"], agg["bucket_75"], agg["bucket_100"]]
     total = sum(counts) or 1
+    inexact = agg.get("bucket_inexact", 0)
+    grand = total + inexact
     labels = ["25%", "50%", "75%", "100%"]
-    print(f"  бакеты доли (резолвнутые вылеты, всего {total:,}):")
+    print(f"  бакеты доли (точные вылеты, всего {total:,}):")
     for lab, c in zip(labels, counts):
         print(f"    {lab:>4}: {c:,} ({c/total*100:.1f}%)")
+    if inexact:
+        print(f"    неточных (в IGNORE, не учим): {inexact:,} ({inexact/grand*100:.1f}% вылетов)")
     # обратная частота, нормированная к среднему 1.0 -> ориентир frac_weights
     inv = [total / (4 * c) if c else 0.0 for c in counts]
     print(f"  ОРИЕНТИР frac_weights ~ [{', '.join(f'{w:.2f}' for w in inv)}] (обратная частота)")

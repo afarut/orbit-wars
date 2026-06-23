@@ -89,6 +89,8 @@ def test_forward():
     assert torch.all(pi[0][:, :M][:, pad_cols] == 0), "паддинг-цели не замаскированы"
 
     assert torch.isfinite(value).all(), "value не конечный"
+    # контракт размерности фич флота (база 10 + 4 фичи назначения)
+    assert enc.fleet_feats.shape[-1] == 14, enc.fleet_feats.shape
     print("  forward формы/маски/softmax: OK   value =", round(value.item(), 4))
 
     # --- set-инвариантность: перемешать порядок планет, мультимножество логитов не меняется ---
@@ -101,6 +103,97 @@ def test_forward():
     assert a.shape == b.shape, (a.shape, b.shape)
     assert torch.allclose(a, b, atol=1e-3), (a - b).abs().max().item()
     print("  set-инвариантность при перестановке планет: OK")
+
+
+def test_rope():
+    """2D axial RoPE: относительность скоров, непозиционный CLS, контракт forward,
+    set-инвариантность под перестановкой планет."""
+    from core.rope import apply_axial_rope, axial_rope_inv_freq
+
+    # --- юнит: относительность ⟨R(p)q, R(p+Δ)k⟩ == ⟨R(0)q, R(Δ)k⟩ ---
+    torch.manual_seed(0)
+    q = torch.randn(1, 2, 1, 32)             # [B,H,N,head_dim]
+    k = torch.randn(1, 2, 1, 32)
+    inv = axial_rope_inv_freq(32, theta=50.0)
+    p = torch.tensor([[[12.0, -7.0]]])       # позиция [B,N,2]
+    d = torch.tensor([[[3.0, 4.0]]])         # сдвиг Δ
+    qp, _ = apply_axial_rope(q, k, p, inv)
+    _, kpd = apply_axial_rope(q, k, p + d, inv)
+    q0, _ = apply_axial_rope(q, k, torch.zeros_like(p), inv)
+    _, kd = apply_axial_rope(q, k, d, inv)
+    lhs = (qp * kpd).sum(-1)
+    rhs = (q0 * kd).sum(-1)
+    assert torch.allclose(lhs, rhs, atol=1e-4), (lhs - rhs).abs().max().item()
+    print("  apply_axial_rope относительность скоров: OK")
+
+    # --- apply_mask=False -> токен не вращается (CLS) ---
+    m = torch.zeros(1, 1, dtype=torch.bool)
+    qm, km = apply_axial_rope(q, k, p, inv, apply_mask=m)
+    assert torch.allclose(qm, q) and torch.allclose(km, k), "apply_mask=False всё равно повернул"
+    print("  apply_axial_rope apply_mask=False (CLS не вращается): OK")
+
+    # --- forward с RoPE: контракт форм/масок/softmax ---
+    torch.manual_seed(0)
+    cfg = FeatureConfig(max_planets=40, max_comets=16, max_fleets=256)
+    net = PolicyValueNet(ModelConfig(use_rope=True)).eval()
+    enc = encode(make_obs(), cfg=cfg)
+    out = net(enc)
+    M = cfg.max_planets + cfg.max_comets
+    assert out["logits"].shape == (1, M, M + 1), out["logits"].shape
+    assert torch.allclose(out["pi"].sum(-1), torch.ones(1, M), atol=1e-5), "pi не нормирован"
+    diag = out["pi"][0, torch.arange(M), torch.arange(M)]
+    assert torch.all(diag == 0), "диагональ не замаскирована"
+    assert torch.isfinite(out["value"]).all(), "value не конечный"
+    print("  RoPE forward формы/маски/softmax: OK")
+
+    # --- set-инвариантность с RoPE: координаты едут вместе с токеном ---
+    obs2 = make_obs()
+    perm = obs2["planets"][:]
+    random.Random(1).shuffle(perm)
+    obs2["planets"] = perm
+    out2 = net(encode(obs2, cfg=cfg))
+    a, b = finite_sorted(out["logits"]), finite_sorted(out2["logits"])
+    assert a.shape == b.shape, (a.shape, b.shape)
+    assert torch.allclose(a, b, atol=1e-3), (a - b).abs().max().item()
+    print("  RoPE set-инвариантность при перестановке планет: OK")
+
+
+def test_owner_emb():
+    """Относит. owner-эмбеддинг: корректные слоты из encode + реальный вклад в forward."""
+    cfg = FeatureConfig(max_planets=40, max_comets=16, max_fleets=256)
+
+    # --- слоты из encode (4p, вид игрока 0): 0=мы,1=CCW,2=напротив,3=CW,4=нейтрал ---
+    planets = [
+        [0, 0, 70.0, 70.0, radius_of(3), 10.0, 3],
+        [1, 1, 30.0, 70.0, radius_of(3), 10.0, 3],
+        [2, 2, 70.0, 30.0, radius_of(3), 10.0, 3],
+        [3, 3, 30.0, 30.0, radius_of(3), 10.0, 3],
+        [4, -1, 50.0, 20.0, radius_of(2), 12.0, 2],
+    ]
+    obs = {"player": 0, "planets": planets, "fleets": [], "angular_velocity": 0.0,
+           "initial_planets": [p[:] for p in planets], "comets": [],
+           "comet_planet_ids": [], "step": 100}
+    slots = encode(obs, cfg=cfg).planet_owner_slot[0, :5].tolist()
+    assert slots == [0, 1, 3, 2, 4], slots          # id0↔id3 и id1↔id2 — напротив
+    print("  owner-слоты encode (4p, игрок 0) =", slots, "OK")
+
+    # --- 1v1: единственный враг всегда напротив (слот 2) ---
+    obs2 = dict(obs, planets=[planets[0][:], planets[1][:]],
+                initial_planets=[planets[0][:], planets[1][:]])
+    s2 = encode(obs2, cfg=cfg).planet_owner_slot[0, :2].tolist()
+    assert s2 == [0, 2], s2
+    print("  owner-слоты encode (1v1) =", s2, "OK")
+
+    # --- owner_emb реально участвует в forward (зануление весов меняет logits) ---
+    torch.manual_seed(0)
+    net = PolicyValueNet(ModelConfig()).eval()
+    ref = net(encode(make_obs(), cfg=cfg))["logits"]
+    with torch.no_grad():
+        net.owner_emb.weight.zero_()
+    zeroed = net(encode(make_obs(), cfg=cfg))["logits"]
+    a, b = finite_sorted(ref), finite_sorted(zeroed)
+    assert not torch.allclose(a, b, atol=1e-4), "owner_emb не влияет на forward"
+    print("  owner_emb вносит вклад в forward (зануление меняет logits): OK")
 
 
 def test_intercept():
@@ -366,6 +459,24 @@ def test_geo_lite():
     assert not (blocked.reaches and blocked.safe), blocked
     print("  geo_lite.validate_launch чистый/перекрытый солнцем: OK")
 
+    # fleet_targets: летящий флот -> первая планета на пути + ETA.
+    # из (25,20) на восток (угол 0) попадает в планету 1 (45,20); на юг (pi/2) — мимо.
+    ids, etas = geo.fleet_targets([25.0, 25.0], [20.0, 20.0],
+                                  [0.0, math.pi / 2], [100.0, 100.0])
+    assert ids[0] == 1 and math.isfinite(etas[0]) and etas[0] > 0, (ids, etas)
+    assert ids[1] is None and not math.isfinite(etas[1]), (ids, etas)
+    print("  geo_lite.fleet_targets (летящий флот -> планета / мимо): OK eta=%.2f" % etas[0])
+
+    # интеграция в encode: канал has_target=1 и центр цели отн. флота (dx,dy)
+    obs_f = dict(obs, fleets=[[100, 1, 25.0, 20.0, 0.0, 0, 100.0]])
+    fr = encode(obs_f, cfg=FeatureConfig()).fleet_feats[0, 0]
+    assert fr.shape[0] == 14, fr.shape
+    assert float(fr[13]) == 1.0, fr[10:14]                 # has_target
+    assert abs(float(fr[10]) - 0.4) < 0.05, fr[10:14]      # dx=(45-25)/50
+    assert abs(float(fr[11])) < 1e-3, fr[10:14]            # dy≈0 (цель строго на восток)
+    assert 0.0 < float(fr[12]) < 1.0, fr[10:14]            # eta нормирован
+    print("  encode фичи назначения флота (has_target/dx/dy/eta): OK")
+
     # shim initial_planets: реплеи кладут в initial_planets ТЕКУЩИЕ планеты, а orbit_lite
     # ждёт позиции игрового шага 0. Без коррекции прогноз орбит уезжает на angvel*(step-1).
     # Проверяем: на step=50 прогноз на 1 шаг = текущая позиция, повёрнутая на angvel*1.
@@ -394,6 +505,10 @@ def test_geo_lite():
 if __name__ == "__main__":
     print("[1] forward")
     test_forward()
+    print("[1b] rope")
+    test_rope()
+    print("[1c] owner-emb")
+    test_owner_emb()
     print("[2] intercept")
     test_intercept()
     print("[3] act")

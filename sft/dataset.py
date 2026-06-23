@@ -21,7 +21,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from core.features import FeatureConfig, encode
+from core.features import (
+    COMET_FEAT_DIM, FLEET_FEAT_DIM, PLANET_FEAT_DIM, FeatureConfig, encode,
+)
 from model import bucket_to_ships  # один источник правды для floor-декода доли
 
 # спец-метки таргета источника (до перевода в индекс места в collate)
@@ -34,17 +36,18 @@ N_FRAC_BUCKETS = 4
 
 
 def ship_bucket(ships: float, garrison: float) -> int:
-    """Число посланных ships -> бакет доли {0:25,1:50,2:75,3:100}%.
+    """Число посланных ships -> бакет доли {0:25,1:50,2:75,3:100}% или ``IGNORE_INDEX``.
 
-    Метка = НАИБОЛЬШИЙ бакет, чей floor-декод ``bucket_to_ships`` не превышает реально
-    посланного: round-trip «эксперт -> метка -> декод» НИКОГДА не пере-засылает, а
-    недосылает минимально. Опирается на ту же ``bucket_to_ships``, что и декод, — метка
-    и декод не разъедутся. Дефолт 0, если даже минимальный бакет уже больше ships
-    (неустранимо при g, где floor(0.25·g) > ships, напр. малый залп с большого гарнизона).
+    Метку ставим ТОЛЬКО при ТОЧНОМ совпадении: ``ships == bucket_to_ships(b, garrison)``.
+    Иначе -> ``IGNORE_INDEX`` (источник не даёт сигнала голове доли). Так лейбл всегда
+    воспроизводим на инференсе — модель не учится бакету, который декодит в другое число
+    (напр. эксперт послал 4 из 7, но floor-декод 50% даёт 3 — такой вылет в IGNORE).
+    Тай-брейк при схлопывании (малый гарнизон, несколько бакетов -> одно число): берём
+    НАИБОЛЬШИЙ — выход декода тот же. Опирается на ту же ``bucket_to_ships``, что и декод.
     """
-    best = 0
+    best = IGNORE_INDEX
     for b in range(N_FRAC_BUCKETS):
-        if bucket_to_ships(b, garrison) <= ships:
+        if bucket_to_ships(b, garrison) == ships:
             best = b
     return best
 
@@ -193,7 +196,10 @@ class SftDataset(Dataset):
         return {
             "planet_feats": enc.planet_feats[0, :n_p].clone(),   # [n_p, 20]
             "comet_feats": enc.comet_feats[0, :n_c].clone(),     # [n_c, 25]
-            "fleet_feats": enc.fleet_feats[0, :n_f].clone(),     # [n_f, 10]
+            "fleet_feats": enc.fleet_feats[0, :n_f].clone(),     # [n_f, FLEET_FEAT_DIM]
+            "planet_owner_slot": enc.planet_owner_slot[0, :n_p].clone(),  # [n_p] long
+            "comet_owner_slot": enc.comet_owner_slot[0, :n_c].clone(),    # [n_c] long
+            "fleet_owner_slot": enc.fleet_owner_slot[0, :n_f].clone(),    # [n_f] long
             "global_feats": enc.global_feats[0].clone(),         # [11]
             "n_p": n_p, "n_c": n_c, "n_f": n_f,
             "sources": sources,
@@ -213,6 +219,16 @@ def _pad_stack(items: List[torch.Tensor], n_max: int, dim: int):
     return out, mask
 
 
+def _pad_stack_idx(items: List[torch.Tensor], n_max: int) -> torch.Tensor:
+    """Сложить список [n_i] long-индексов в [B, n_max] (pad-слот 0; закрыт pad_mask в attention)."""
+    out = torch.zeros(len(items), n_max, dtype=torch.long)
+    for b, t in enumerate(items):
+        n = t.shape[0]
+        if n:
+            out[b, :n] = t
+    return out
+
+
 def collate(batch: List[dict]) -> Tuple["BatchObs", torch.Tensor, torch.Tensor, int]:
     """Динамический паддинг + labels [B,M_b] (цель) и frac_labels [B,M_b] (бакет доли).
 
@@ -225,9 +241,15 @@ def collate(batch: List[dict]) -> Tuple["BatchObs", torch.Tensor, torch.Tensor, 
     M_b = P_b + C_b
     hold_idx = M_b
 
-    planet_feats, planet_mask = _pad_stack([x["planet_feats"] for x in batch], P_b, 20)
-    comet_feats, comet_mask = _pad_stack([x["comet_feats"] for x in batch], C_b, 25)
-    fleet_feats, fleet_mask = _pad_stack([x["fleet_feats"] for x in batch], F_b, 10)
+    planet_feats, planet_mask = _pad_stack(
+        [x["planet_feats"] for x in batch], P_b, PLANET_FEAT_DIM)
+    comet_feats, comet_mask = _pad_stack(
+        [x["comet_feats"] for x in batch], C_b, COMET_FEAT_DIM)
+    fleet_feats, fleet_mask = _pad_stack(
+        [x["fleet_feats"] for x in batch], F_b, FLEET_FEAT_DIM)
+    planet_owner_slot = _pad_stack_idx([x["planet_owner_slot"] for x in batch], P_b)
+    comet_owner_slot = _pad_stack_idx([x["comet_owner_slot"] for x in batch], C_b)
+    fleet_owner_slot = _pad_stack_idx([x["fleet_owner_slot"] for x in batch], F_b)
     global_feats = torch.stack([x["global_feats"] for x in batch], dim=0)  # [B, 11]
 
     labels = torch.full((len(batch), M_b), IGNORE_INDEX, dtype=torch.long)
@@ -246,21 +268,24 @@ def collate(batch: List[dict]) -> Tuple["BatchObs", torch.Tensor, torch.Tensor, 
                     frac_labels[b, src_g] = frac_bucket
 
     obs = BatchObs(planet_feats, planet_mask, comet_feats, comet_mask,
-                   fleet_feats, fleet_mask, global_feats)
+                   fleet_feats, fleet_mask, global_feats,
+                   planet_owner_slot, comet_owner_slot, fleet_owner_slot)
     return obs, labels, frac_labels, hold_idx
 
 
 class BatchObs:
     """Утиный аналог EncodedObs для forward: те же поля-тензоры (без places/owned_idx).
 
-    PolicyValueNet.forward читает только *_feats и *_mask, поэтому остальное не нужно.
+    forward читает *_feats, *_mask и *_owner_slot (имена полей совпадают с EncodedObs).
     """
 
     __slots__ = ("planet_feats", "planet_mask", "comet_feats", "comet_mask",
-                 "fleet_feats", "fleet_mask", "global_feats")
+                 "fleet_feats", "fleet_mask", "global_feats",
+                 "planet_owner_slot", "comet_owner_slot", "fleet_owner_slot")
 
     def __init__(self, planet_feats, planet_mask, comet_feats, comet_mask,
-                 fleet_feats, fleet_mask, global_feats):
+                 fleet_feats, fleet_mask, global_feats,
+                 planet_owner_slot, comet_owner_slot, fleet_owner_slot):
         self.planet_feats = planet_feats
         self.planet_mask = planet_mask
         self.comet_feats = comet_feats
@@ -268,6 +293,9 @@ class BatchObs:
         self.fleet_feats = fleet_feats
         self.fleet_mask = fleet_mask
         self.global_feats = global_feats
+        self.planet_owner_slot = planet_owner_slot
+        self.comet_owner_slot = comet_owner_slot
+        self.fleet_owner_slot = fleet_owner_slot
 
     def to(self, device: torch.device) -> "BatchObs":
         return BatchObs(
@@ -275,4 +303,6 @@ class BatchObs:
             self.comet_feats.to(device), self.comet_mask.to(device),
             self.fleet_feats.to(device), self.fleet_mask.to(device),
             self.global_feats.to(device),
+            self.planet_owner_slot.to(device), self.comet_owner_slot.to(device),
+            self.fleet_owner_slot.to(device),
         )

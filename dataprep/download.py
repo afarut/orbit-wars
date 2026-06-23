@@ -50,7 +50,13 @@ import argparse
 import os
 import sys
 import time
-from typing import List, Optional, Set
+from typing import Any, Iterable, List, Optional, Set
+
+try:                                             # прогресс-бар для офлайн-прогонов
+    from tqdm import tqdm
+except ImportError:                              # без tqdm загрузчик всё равно работает (без бара)
+    def tqdm(it: Iterable, **_kw: Any) -> Iterable:  # type: ignore[misc]
+        return it
 
 SOFT_DAILY_WARN = 3000          # мягкий порог за прогон (ниже community-оценки ~3600/день)
 
@@ -110,6 +116,14 @@ def download_replay(api, episode_id: int, out_dir: str) -> bool:
 
 
 # --- основной цикл -----------------------------------------------------------
+def _bar_log(bar, msg: str) -> None:
+    """Печать поверх tqdm-бара (или обычный print, если tqdm-заглушка без .write)."""
+    if hasattr(bar, "write"):
+        bar.write(msg)
+    else:
+        print(msg)
+
+
 def harvest(api, sub_ids: List[int], out_dir: str, *, sleep: float,
             max_replays: Optional[int], per_sub: Optional[int]) -> None:
     os.makedirs(out_dir, exist_ok=True)
@@ -117,17 +131,20 @@ def harvest(api, sub_ids: List[int], out_dir: str, *, sleep: float,
     downloaded = skipped = errors = 0
     capped = False
 
-    for i, sub in enumerate(sub_ids):
+    bar = tqdm(sub_ids, desc="download", unit="sub")
+
+    def _postfix() -> None:                        # живые счётчики только при настоящем tqdm
+        if hasattr(bar, "set_postfix"):
+            bar.set_postfix(dl=downloaded, skip=skipped, err=errors)
+
+    for sub in bar:
         try:
             eps = episode_ids_for_sub(api, sub)
         except Exception as e:                     # noqa: BLE001
-            print(f"[{i+1}/{len(sub_ids)}] sub {sub}: список эпизодов не получен: {e}")
+            _bar_log(bar, f"sub {sub}: список эпизодов не получен: {e}")
             continue
         if per_sub is not None and len(eps) > per_sub:
-            print(f"[{i+1}/{len(sub_ids)}] sub {sub}: {len(eps)} эпизодов -> беру первые {per_sub}")
             eps = eps[:per_sub]
-        else:
-            print(f"[{i+1}/{len(sub_ids)}] sub {sub}: {len(eps)} эпизодов")
 
         for ep in eps:
             if ep in seen_eps:
@@ -140,21 +157,22 @@ def harvest(api, sub_ids: List[int], out_dir: str, *, sleep: float,
                 got = download_replay(api, ep, out_dir)
             except Exception as e:                 # noqa: BLE001
                 errors += 1
-                print(f"  [err ep {ep}] {str(e)[:100]}")
+                _bar_log(bar, f"[err ep {ep}] {str(e)[:100]}")
+                _postfix()
                 time.sleep(sleep)
                 continue
             if got:
                 downloaded += 1
-                if downloaded % 25 == 0:
-                    print(f"  …скачано {downloaded}")
                 if downloaded == SOFT_DAILY_WARN:
-                    print(f"  !! приближаешься к ~{SOFT_DAILY_WARN}+ за прогон — "
-                          f"возможен суточный rate-limit аккаунта, лучше сделать паузу")
+                    _bar_log(bar, f"!! приближаешься к ~{SOFT_DAILY_WARN}+ за прогон — "
+                                  f"возможен суточный rate-limit аккаунта, лучше сделать паузу")
+                _postfix()
                 time.sleep(sleep)                  # пауза только после реального запроса
             else:
                 skipped += 1
+                _postfix()
         if capped:
-            print(f"!! достигнут --max-replays={max_replays}, останавливаюсь")
+            _bar_log(bar, f"!! достигнут --max-replays={max_replays}, останавливаюсь")
             break
 
     print(f"\nИтог: скачано {downloaded}, пропущено (уже было) {skipped}, "

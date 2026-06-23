@@ -89,6 +89,14 @@ def check_mask_invariant(path: str, cfg: FeatureConfig, max_lines: int = 4000) -
     batch = [ds[i] for i in range(min(64, len(ds)))]
     obs, labels, frac_labels, hold_idx = collate(batch)
 
+    # owner-слоты: long, форма == маске, значения 0..4, паддинг-слоты нулевые
+    for sl, mask, name in ((obs.planet_owner_slot, obs.planet_mask, "planet"),
+                           (obs.comet_owner_slot, obs.comet_mask, "comet"),
+                           (obs.fleet_owner_slot, obs.fleet_mask, "fleet")):
+        assert sl.shape == mask.shape and sl.dtype == torch.long, (name, sl.shape, sl.dtype)
+        assert 0 <= int(sl.min()) and int(sl.max()) <= 4, (name, int(sl.min()), int(sl.max()))
+        assert int(sl[~mask].sum()) == 0, f"{name}: паддинг-слоты не нулевые"
+
     model = PolicyValueNet(ModelConfig())
     frac_pairs, frac_tgt = L.frac_pairs_from(labels, frac_labels)
     with torch.no_grad():

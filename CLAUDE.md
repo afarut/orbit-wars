@@ -1,182 +1,307 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Указания для Claude Code (claude.ai/code) при работе с этим репозиторием.
 
-## What this is
+**Язык:** общайся и думай по-русски (ответы, рассуждения, комментарии, докстринги).
 
-An imitation-learning (SFT / behavioral cloning) bot for the Kaggle **Orbit Wars** competition. A
-set-transformer policy/value net is trained on public leaderboard replays to imitate strong players,
-then submitted as a `act(obs) -> moves` agent. See `orbit_wars_rules.md` and `insights/*.md` for the
-game mechanics the features and decoder encode.
+## Что это
 
-Comments and docstrings are written in **Russian** and kept **brief** — match that when editing.
+Бот на имитационном обучении (SFT / behavioral cloning) для Kaggle-соревнования **Orbit Wars**.
+Set-transformer policy/value-сеть обучается на публичных реплеях лидерборда, имитируя сильных игроков,
+и затем сабмитится как агент `act(obs) -> moves`. Механики игры, которые кодируют фичи и декодер, см.
+в `orbit_wars_rules.md` и `insights/*.md`.
 
-## Submission boundary (important)
+Комментарии и докстринги в коде — на **русском** и **краткие**; держись этого при правках.
 
-Two halves of the repo that must not blur together:
+## Граница сабмишна (важно)
 
-- **Runtime / submission**: `model.py` + `core/` (numpy + torch only). This is what runs inside the
-  Kaggle environment at inference. `core/__init__.py` is the public surface; `model.PolicyValueNet`
-  lives at top level and imports `core`. `core/geo_lite.py` is a thin facade over the `orbit_lite`
-  package (`producer-orbit-wars-utils/`, torch-only) and is the **sole** importer of it *within the
-  submission* — so `orbit_lite/` must be bundled into the submission alongside `model.py` (the facade
-  adds its parent dir to `sys.path`). (Offline `agents/` also import `orbit_lite` directly, but are
-  never shipped.) The facade supplies the launch geometry (lead angle / angle→planet / launch
-  validation); the legacy numpy tools (`core/intercept.py`, `core/utils.validate_launch`) stay because
-  `core/features.py` and `dataprep` still use them.
-- **Offline-only**: `sft/`, `dataprep/`, `configs/`, `eval/`, `agents/`. These pull in `hydra`,
-  `torch.distributed`, `kaggle`, `kaggle_environments`, `trueskill`, datasets — needed for
-  training/ETL/evaluation, never shipped in the submission. `agents/` holds standalone heuristic bots
-  (`orbit_lite` flow-diff planners ported from Kaggle notebooks) used as eval opponents.
+Две половины репо, которые нельзя смешивать:
 
-## Environment & commands
+- **Runtime / сабмишн**: `model.py` + `core/` (только numpy + torch). Именно это крутится внутри
+  Kaggle-окружения на инференсе. `core/__init__.py` — публичная поверхность; `model.PolicyValueNet`
+  лежит на верхнем уровне и импортирует `core`. Там же, на верхнем уровне `model.py`, живёт
+  `bucket_to_ships` — **единственный источник правды** для floor-декода доли гарнизона в число
+  кораблей (его же импортируют разметка датасета и ETL, чтобы метка и декод не разъехались).
+  `core/geo_lite.py` — тонкий фасад над пакетом `orbit_lite` (`producer-orbit-wars-utils/`,
+  torch-only) и **единственный** его импортёр *внутри сабмишна* — поэтому `orbit_lite/` надо
+  бандлить в сабмишн рядом с `model.py` (фасад сам добавляет родительскую директорию в `sys.path`).
+  (Офлайновые `agents/` тоже импортируют `orbit_lite` напрямую, но в сабмишн не входят.) Фасад даёт
+  геометрию запуска (lead-угол / угол→планета / валидация запуска); легаси-инструменты на numpy
+  (`core/intercept.py`, `core/utils.validate_launch`) остаются, потому что на них всё ещё опираются
+  `core/features.py` и `dataprep`.
+- **Только офлайн**: `sft/`, `dataprep/`, `configs/`, `eval/`, `agents/`, `hydra_utils.py`,
+  `notebooks/`. Тянут `hydra`, `torch.distributed`, `kaggle`, `kaggle_environments`, `trueskill`,
+  датасеты, matplotlib — нужны для обучения/ETL/оценки, в сабмишн не попадают. `agents/` —
+  отдельные эвристические боты (`orbit_lite` flow-diff планировщики, перенесённые из Kaggle-ноутбуков),
+  используются как оппоненты на эвале.
 
-No `requirements.txt` / `pyproject.toml`; deps live in the committed `.venv` (Python 3.12, torch CPU,
-hydra-core, omegaconf, numpy, tensorboard, kaggle, tqdm). **Not a git repo.** Always invoke with the
-venv interpreter: `.venv/bin/python`.
+## Окружение и команды
+
+Зависимости перечислены в `requirements.txt` (версии сняты с рабочего `.venv`, Python 3.12: torch,
+hydra-core, omegaconf, numpy, tensorboard, kaggle, tqdm, kaggle-environments, trueskill, matplotlib).
+Сам `.venv` в git **не коммитится** (в `.gitignore`, как и `data/`, `replays/`, `*.jsonl`, `*.pt`,
+`outputs/`, `tb/`). Репозиторий **является** git-репо. Всегда запускай интерпретатором из venv:
+`.venv/bin/python`.
 
 ```bash
-# Architecture smoke tests (no kaggle_environments needed): forward shapes/masks, set-invariance,
-# intercept correctness vs simulated oracle, act() validity, validate_launch vs brute-force oracle
+# Smoke-тесты архитектуры (kaggle_environments не нужен): формы/маски forward, set-инвариантность,
+# корректность intercept против симулированного оракула, валидность act(), validate_launch vs brute-force
 .venv/bin/python smoke_test.py
 
-# SFT pipeline correctness (labels round-trip, mask invariant, overfit-one-batch trainability)
-.venv/bin/python -m sft.check --path data/sft.full_send.jsonl     # or a small /tmp/sft.smoke.jsonl
+# Корректность SFT-пайплайна (round-trip меток цели и бакета доли, инвариант маски, обучаемость на одном батче)
+.venv/bin/python -m sft.check --path data/sft.full_send.jsonl     # либо маленький /tmp/sft.smoke.jsonl
 
-# Train (Hydra). Auto-picks CUDA / MPS / CPU.
-.venv/bin/python -m sft.train                                     # single process
-.venv/bin/torchrun --standalone --nproc_per_node=N sft/train.py   # multi-GPU DDP
-.venv/bin/python -m sft.train train.batch_size=512 data.w_hold=0.05   # CLI overrides (Hydra dot-path)
+# Обучение (Hydra). Девайс (CUDA / MPS / CPU) выбирается автоматически.
+.venv/bin/python -m sft.train                                     # один процесс
+.venv/bin/torchrun --standalone --nproc_per_node=N sft/train.py   # мульти-GPU DDP
+.venv/bin/python -m sft.train train.batch_size=512 data.w_hold=0.05   # CLI-оверрайды (Hydra dot-path)
 
-tensorboard --logdir outputs                                      # runs written per-launch under outputs/
+# Локальный турнир (Hydra; см. раздел «Локальная оценка»)
+.venv/bin/python -m eval.run pool=baselines mode=1v1 episodes=25
+
+tensorboard --logdir outputs                                      # запуски пишутся под outputs/
 ```
 
-Runs land in `outputs/<timestamp>/` (Hydra cwd) with `checkpoints/` (best/last/epochNN `.pt`) and
-`tb/` underneath. Checkpoints embed `model_cfg` + `feature_cfg` so weights load into
-`PolicyValueNet.act` without guessing shapes.
+Запуски ложатся в `outputs/<timestamp>/` (cwd Hydra) с `checkpoints/` (best/last/epochNN `.pt`) и
+`tb/` внутри. Чекпойнты несут в себе `model_cfg` + `feature_cfg`, поэтому веса грузятся в
+`PolicyValueNet.act` без угадывания форм. Все Hydra-входы (`sft.train`, `eval.run`) печатают полный
+конфиг в начале запуска через `hydra_utils.print_cfg`.
 
-There is no pytest suite — `smoke_test.py` and `sft.check` are the test harness; run them after touching
-`core/`, `model.py`, or the dataset/loss code.
+Pytest-набора нет — тестовая обвязка это `smoke_test.py` и `sft.check`; гоняй их после правок
+`core/`, `model.py` или кода датасета/лоссов.
 
-## Model architecture (`model.py` + `core/features.py`)
+## Архитектура модели (`model.py` + `core/features.py`)
 
-A **set-transformer over heterogeneous entity tokens**, decoded as a source→target edge problem:
+**Set-transformer над разнородными токенами-сущностями**, декодируемый как задача «ребро источник→цель»:
 
-1. `core.features.encode(obs)` turns a raw obs dict into padded per-type feature tensors (planets,
-   comets, fleets) plus a single sun token and a global "side" feature vector. It also returns
-   `places` (decode metadata, incl. a ready `intercept.Target`) and `owned_idx`.
-2. Per-type MLP encoders project each entity to `d_model` and add a learned type-embedding; everything
-   concatenates into one token set fed through a `TransformerEncoder` (permutation-invariant; padding
-   masked via `src_key_padding_mask`).
-3. Planet+comet hidden states are the "places". `mlp_from`/`mlp_to` produce a scaled dot-product score
-   matrix `S[from, to]`, with a `hold` column appended → logits `[B, M, M+1]`, softmax over the `to`
-   axis. Self-target diagonal and padding columns are masked to `-inf`. Value head reads the global token.
-4. `act()` decode: each owned place argmaxes one target (or hold); `num_ships` baseline is the **whole
-   garrison** (~70% of expert salvos are "send everything"); the launch **angle** comes from
-   `core.geo_lite.GeoEngine.intercept` (orbit_lite lead-angle) so moving targets are led correctly.
+1. `core.features.encode(obs)` превращает сырой obs-dict в паддированные фич-тензоры по типам (планеты,
+   кометы, флоты) плюс единичный токен-солнце и глобальный вектор «доп-фич side». Возвращает также
+   `places` (метаданные декода, включая готовый `intercept.Target`) и `owned_idx`.
+2. Per-type MLP-энкодеры проецируют каждую сущность в `d_model` и добавляют обучаемый type-эмбеддинг
+   **плюс относительный owner-эмбеддинг** (`model.owner_emb`, таблица `[5, d_model]`): к каждому
+   токену-планете/комете/флоту прибавляется эмбеддинг по слоту владельца **относительно нас** —
+   `0=мы, 1=CCW-сосед, 2=напротив, 3=CW-сосед, 4=нейтрал` (солнце/глобал — без owner). Слот считается
+   в `features.encode` чисто по `owner id` через перестановку `_OWNER_POS={0:0,1:1,2:3,3:2}` (выведена
+   из движка: спавн ротационно-симметричен, `id0↔id3`/`id1↔id2` напротив; в 1v1 враг всегда слот 2).
+   Это даёт направленную идентификацию оппонентов в 4p; в 1v1 эквивалентно старому `is_enemy`.
+   Всё конкатится в единый набор токенов, прогоняется через `TransformerEncoder` (перестановочно
+   инвариантен; паддинг маскируется через `src_key_padding_mask`).
+3. Хиддены планет+комет — это «места». `mlp_from`/`mlp_to` дают матрицу скоров `S[from, to]` (scaled
+   dot-product), к ней добавляется колонка `hold` → логиты `[B, M, M+1]`, softmax по оси `to`.
+   Self-target по диагонали и паддинг-колонки маскируются в `-inf`. Value-голова читает глобальный токен.
+4. Декод `act()`: каждое своё место argmax-ом выбирает одну цель (или hold). **Число кораблей**
+   выбирает голова `mlp_frac` — **4-классовый бакет-классификатор доли гарнизона {25, 50, 75, 100}%**,
+   обусловленный **парой (источник, цель)**: на вход идёт конкат хидденов `h_src ⊕ h_tgt` (то есть
+   факторизация `p(куда) · p(сколько | куда)`). Бакет переводится в целое число кораблей функцией
+   `bucket_to_ships` (floor-округление доли: не пере-засылаем, ошибка < 1 корабля; 100% → весь
+   гарнизон). **Угол** запуска берётся из `core.geo_lite.GeoEngine.intercept` (lead-угол orbit_lite),
+   чтобы движущиеся цели брались с упреждением.
 
-**Feature-dim contract**: `PLANET_FEAT_DIM=20`, `COMET_FEAT_DIM=25`, `FLEET_FEAT_DIM=10`,
-`GLOBAL_FEAT_DIM=11` in `core/features.py` are hard-wired into the encoder input sizes in `model.py`.
-`PLANET_FEAT_DIM` assumes `len(FeatureConfig.horizons)==3` — changing horizons breaks the contract;
-the engine deliberately does not surface `horizons` as a trainable knob (`sft/engine.py:_feature_cfg`).
+**Голова числа кораблей и DDP**: при teacher forcing (обучение) `forward(frac_pairs=(b_idx, s_idx,
+t_idx))` считает `mlp_frac` **внутри** обёрнутого forward и кладёт результат в `frac_logits` [N, 4].
+Это принципиально для DDP — иначе градиенты `mlp_frac` не синхронизируются между рангами. `t_idx` —
+**экспертная** цель из меток (см. `sft.loss.frac_pairs_from`).
 
-`core/intercept.py` is a self-contained numpy lead-angle tool (static / orbit / comet targets;
-logarithmic `fleet_speed` 1→6). `core/utils.py` has `build_mlp` and `validate_launch` (vectorized
-straight-line collision check against sun / other planets / out-of-bounds). These still back
-`core/features.py`'s feature math, so they remain — but the **runtime launch geometry** (decode angle,
-eval sniper, ETL angle→planet) now goes through `core/geo_lite.py` (`orbit_lite`).
+**Контракт размерностей фич**: `PLANET_FEAT_DIM=20`, `COMET_FEAT_DIM=25`, `FLEET_FEAT_DIM=14`,
+`GLOBAL_FEAT_DIM=11` в `core/features.py` зашиты в размеры входов энкодера в `model.py` (а в
+`sft/dataset.collate` динамический паддинг тянет те же константы, не хардкод). `PLANET_FEAT_DIM`
+предполагает `len(FeatureConfig.horizons)==3` — менять horizons ломает контракт; движок намеренно не
+выставляет `horizons` обучаемым параметром (`sft/engine.py:_feature_cfg`).
 
-**`core/geo_lite.py` `initial_planets` shim (important)**: `orbit_lite` reconstructs each orbit's phase
-from `initial_planets` assuming they are the *game-step-0* positions (`angle = a0 + angvel·(step-1)`,
-rotation about `(50,50)`). This repo's replay states instead store `initial_planets == current planets`,
-which would make orbit_lite's forecast overshoot every orbiting target by `angvel·(step-1)` (~40 board
-units at high steps → wrong intercept/resolution). The facade therefore rebuilds the true `a0` by
-rotating current planets **back** by `angvel·(step-1)` before handing the obs to orbit_lite. It is
-idempotent (a genuine game-initial obs yields the same `a0`) and validated by `smoke_test.test_geo_lite`
-(1-step orbit forecast error ≈ 0).
+**Фичи назначения флота** (последние 4 канала `FLEET_FEAT_DIM`): `dx, dy` — центр планеты-назначения
+относительно флота (нормировка /50), `eta` (нормировка на `FLEET_ETA_NORM=150`), `has_target` (флаг).
+Назначение в obs **не лежит** (`fleets`-строка — `[id, owner, x, y, angle, from_planet_id, ships]`,
+куда летит не хранится), поэтому планета-цель и ETA считаются `core.geo_lite.GeoEngine.fleet_targets`
+(first-contact orbit_lite из текущей позиции флота вдоль heading, верный движку). Флот ни в кого не
+попадающий (край/солнце/мимо) → нули + `has_target=0` (не врём «цель в (0,0), eta=0»). `encode`
+принимает опциональный `geo`: `model.act` строит `GeoEngine` один раз и переиспользует его и для фич,
+и для угла декода (иначе `PlanetMovement` строился бы дважды за ход); в воркерах обучения `geo=None` →
+строится лениво внутри `encode` (заметная цена: torch-`PlanetMovement` на каждый ход).
 
-## Training data flow
+`core/intercept.py` — самодостаточный numpy-инструмент lead-угла (статичные / орбитальные / кометные
+цели; логарифмический `fleet_speed` 1→6). `core/utils.py` — `build_mlp` и `validate_launch`
+(векторная проверка прямолинейного полёта на столкновение с солнцем / другими планетами / выход за
+поле). Они всё ещё подпирают фич-математику в `core/features.py`, поэтому остаются — но **боевая
+геометрия запуска** (угол декода, снайпер эвала, угол→планета в ETL) теперь идёт через
+`core/geo_lite.py` (`orbit_lite`).
 
-`sft/dataset.py` reads `data/sft.full_send.jsonl`. Each move is encoded **on the fly** in DataLoader
-workers; targets are built layout-independently (per source: destination-planet / `HOLD` / `IGNORE`)
-and only mapped to place indices in `collate`, which pads **dynamically to the per-batch max** of each
-entity type (model is shape-driven, so no fixed 40/16/256 padding at train time). Train/val split is
-**by episode** (`meta.episode_id`) — adjacent moves correlate, so a per-move split would leak.
+**Шим `initial_planets` в `core/geo_lite.py` (важно)**: `orbit_lite` реконструирует фазу каждой
+орбиты из `initial_planets`, считая их позициями *на шаге 0 игры* (`angle = a0 + angvel·(step-1)`,
+вращение вокруг `(50,50)`). В реплеях этого репо `initial_planets == текущие planets`, из-за чего
+прогноз orbit_lite перелетал бы каждую орбитальную цель на `angvel·(step-1)` (~40 ед. поля на больших
+шагах → неверный intercept/резолв). Поэтому фасад восстанавливает истинный `a0`, **откручивая**
+текущие планеты назад на `angvel·(step-1)` перед передачей obs в orbit_lite. Операция идемпотентна
+(настоящий game-initial obs даёт тот же `a0`) и проверяется `smoke_test.test_geo_lite` (ошибка
+1-шагового прогноза орбиты ≈ 0).
 
-`sft/loss.py`: weighted cross-entropy over sources. Class count is **dynamic** (`M_b+1` per batch), so a
-standard per-class `weight=` vector is meaningless — instead only the `hold` column (always the last,
-`hold_idx = M_b`) is down-weighted by `w_hold` (≈0.074, the send/hold ratio; dataset is ~93% hold by
-source). The value head is not trained (`value_weight=0`, winner-only data); DDP runs with
-`find_unused_parameters=True` to tolerate its dead gradients.
+## Поток обучающих данных
 
-## Offline ETL (`dataprep/`)
+`sft/dataset.py` читает `data/sft.full_send.jsonl` (дефолт; есть и вариант `data/sft.all_send.jsonl` —
+см. ниже). Каждый ход кодируется **на лету** в воркерах DataLoader; таргеты строятся
+layout-независимо (на источник: планета-назначение / `HOLD` / `IGNORE`) и переводятся в индексы мест
+уже в `collate`, который паддит **динамически до максимума батча** по каждому типу сущности (модель
+shape-driven, фиксированного паддинга 40/16/256 на обучении нет). Сплит train/val — **по эпизодам**
+(`meta.episode_id`): соседние ходы коррелируют, поэлементный сплит протёк бы.
 
-Four sequential stages, all offline (never in the submission). Legacy single-file parser lives in
-`dataprep/legacy/` (reference only):
+**Две головы — две метки на источник:**
+- Метка цели (`labels`): индекс места-назначения, `HOLD` или ignore.
+- Метка доли (`frac_labels`): бакет {0:25, 1:50, 2:75, 3:100}%, ставится **только** для разрешённых
+  вылетов (нужен валидный индекс цели `t_idx` для гейзера `h_tgt`) **и только при ТОЧНОМ совпадении**:
+  `ship_bucket` даёт бакет лишь когда `ships == bucket_to_ships(b, garrison)`, иначе `IGNORE` (вылет не
+  даёт сигнала голове доли). Так лейбл всегда воспроизводим на инференсе floor-декодом — модель не учит
+  бакет, который декодит в другое число (эксперт послал 4 из 7 → floor-декод 50% даёт 3 → такой вылет
+  в IGNORE). Тай-брейк при схлопывании (малый гарнизон) — наибольший бакет. Опирается на ту же
+  `bucket_to_ships`, что и декод, поэтому метка и декод не разъезжаются. **Цена:** ~29% частичных
+  вылетов (и ~34% бакета 50%, т.к. эксперты округляют половину вверх, а декод — вниз) уходят в IGNORE;
+  `full_send` (всё = 100%) не затронут. `frac_weights`-ориентир печатает `dataprep/preprocess.py`.
+
+Чтобы у головы доли был сигнал, `sends`-строки несут **число кораблей**: `[from_id, dest_id, ships]`
+(старые 2-колоночные файлы грузятся без метки доли). На `full_send` все вылеты — весь гарнизон, так что
+обучающего сигнала по доле почти нет; для головы числа кораблей предназначен вариант **`all_send`**
+(фильтр `partial_send`, оставляет частичные вылеты — `configs/data/all_send.yaml`).
+
+`sft/loss.py`:
+- `policy_loss` — взвешенный cross-entropy по источникам. Число классов **динамическое** (`M_b+1` на
+  батч), стандартный per-class `weight=` бессмыслен — поэтому down-weight-ится **только** колонка
+  `hold` (всегда последняя, `hold_idx = M_b`) на `w_hold` (≈0.074 для full_send — send/hold-баланс;
+  ≈0.134 для all_send).
+- `fraction_loss` — CE головы доли по **фиксированным** 4 классам, поэтому обычный `weight=`-вектор
+  работает: `train.frac_weights` балансирует перекос к 100% (~67% вылетов — full). Ориентир (обратная
+  частота) печатает `dataprep/preprocess.py`.
+- Общий лосс: `policy_loss + w_frac · fraction_loss` (`sft/engine.py`). Value-голова не обучается
+  (`value_weight=0`, данные winner-only); DDP идёт с `find_unused_parameters=True`, чтобы стерпеть её
+  мёртвые градиенты. Лучший чекпойнт (`best.pt`) выбирается по **`send_acc`** на валидации.
+
+## Офлайн-ETL (`dataprep/`)
+
+Пять последовательных стадий, все офлайн (в сабмишн не входят). Легаси-парсер одним файлом — в
+`dataprep/legacy/` (только для справки). Все стадии разом гоняет **оркестратор** `dataprep/build.py`
+с прогресс-баром на каждом шаге (он же — путь для пересборки одной командой):
 
 ```bash
-# 1. Download public replays from the Kaggle leaderboard (polite ~1 req/sec, resumable, dedup by id)
+# докачать реплеи топ-80 команд и пересобрать весь датасет с балансом по командам:
+.venv/bin/python -m dataprep.build --top 80 --cap 30000 --seed 0
+# только пересборка из уже скачанных replays/ (без обращения к Kaggle):
+.venv/bin/python -m dataprep.build --skip-download --cap 30000
+```
+
+`--overwrite` форсит convert собрать датасет с нуля; иначе convert докачивает только новые реплеи через
+манифест, а производные файлы (filter/balance/preprocess) пересобираются всегда. Ниже — те же стадии по
+отдельности:
+
+```bash
+# 1. Скачать публичные реплеи с лидерборда Kaggle (вежливо ~1 req/sec, резюмируемо, дедуп по id)
 .venv/bin/python -m dataprep.download --top 50 --out replays/
 
-# 2. Parse replays -> {state, action, meta} samples
+# 2. Распарсить реплеи -> сэмплы {state, action, meta}
 .venv/bin/python -m dataprep.convert --in "replays/*.json" --out data/samples.jsonl --who winner
 
-# 3. Filter by action class (default keep = full_send)
+# 3. Отфильтровать по классу действия. Доступные фильтры (--keep, по умолчанию full_send):
+#    full_send       — hold ЛИБО вылет всего гарнизона (метки согласованы с декодом-«всё»)
+#    partial_send    — hold ЛИБО любой вылет (включая ЧАСТИЧНЫЙ) — сигнал для головы числа кораблей
+#    distinct_sources, single_launch — дополнительные срезы
 .venv/bin/python -m dataprep.filter --in data/samples.jsonl --out data/samples.full_send.jsonl --keep full_send
+.venv/bin/python -m dataprep.filter --in data/samples.jsonl --out data/samples.all_send.jsonl  --keep partial_send
 
-# 4. Convert each launch angle -> destination planet id (core.geo_lite.GeoEngine.planet_at_angle)
-.venv/bin/python -m dataprep.preprocess --in data/samples.full_send.jsonl --out data/sft.full_send.jsonl
-#    --horizon N  (forecast horizon for the orbit_lite resolver; default 150, covers slow long flights)
+# 4. Сбалансировать число сэмплов по командам (meta.team) — убрать перекос к частым победителям.
+#    РЕКОМЕНДУЕТСЯ cap-only: оставить ВСЕ команды, обрезать только верх до N (анти-доминирование
+#    без потери хвоста; распределение тяжелохвостое, строгое «поровну» выкидывает почти всё).
+#    Отбор N из C внутри команды — алгоритм S (равномерно), сид --seed.
+.venv/bin/python -m dataprep.balance --in data/samples.full_send.jsonl \
+    --out data/samples.full_send.balanced.jsonl --cap 30000
+
+# 5. Перевести каждый угол запуска -> планета-назначение (core.geo_lite.GeoEngine.planet_at_angle)
+.venv/bin/python -m dataprep.preprocess --in data/samples.full_send.balanced.jsonl --out data/sft.full_send.jsonl
+#    --horizon N  (горизонт прогноза для резолвера orbit_lite; дефолт 150, покрывает медленные долгие полёты)
 ```
 
-Output of step 4 is the training file: `{state, sends:[[from_id,dest_id]], unresolved:[...], meta}`,
-where `unresolved` sources (angle that didn't map back to a planet, ~0%) become `IGNORE` in training.
-Step 4 was migrated from `core.utils.planet_at_angle` (numpy) to `core.geo_lite.GeoEngine` (orbit_lite,
-via the `initial_planets` shim above): ~99% identical labels to the old resolver, the rest are cases the
-engine-faithful orbit_lite resolves that the old one dropped. **Because labels can shift, re-run step 4
-and retrain** when adopting it. It builds a torch movement cache per state, so it is slower than the old
-numpy path (fine for a one-time offline job).
+Стадия **balance** (`dataprep/balance.py`) группирует по `meta.team` (имя команды из `info.TeamNames`,
+для `--who winner` — победитель; численного id команды/сабмишна в реплеях нет). Распределение объёмов
+команд **тяжелохвостое** (медиана ~сотни ходов, у топ-команд десятки-сотни тысяч), поэтому строгое
+«у всех поровну» разрушительно (упирается в самую мелкую команду, выживает ~2-3%). Рекомендуемый
+режим — **`--cap N`** (cap-only): оставить ВСЕ команды, обрезать только верх до `N` (нужное `N` из `C`
+внутри команды берётся равномерно, алгоритм S). Есть и режим **коридора** `--tol`/`--center` (для
+ровных распределений) и ручной `--target-n`. Балансируем именно **после фильтра** (filter режет у разных
+команд разные доли). Поле `team` живёт в `samples.*.jsonl`, но дропается на шаге preprocess (тренер его
+не читает — сплит по `meta.episode_id`), поэтому balance стоит до preprocess.
+Сэмпловый баланс не ломает сплит train/val по эпизодам — эпизоды просто становятся меньше.
 
-**Frame-shift gotcha** (`dataprep/convert.py`): kaggle_environments stores `obs[t]` *after* applying
-`action[t]`, so `action[t]` was decided from `obs[t-1]`. The converter pairs `(state_t, action_{t+1})`;
-the naive same-frame pairing yields ~57% "sent more ships than garrison" violations vs 0% when shifted.
+Выход шага 5 — обучающий файл: `{state, sends:[[from_id, dest_id, ships]], unresolved:[...], meta}`,
+где `unresolved`-источники (угол не лёг ни на одну планету, ~0%) становятся `IGNORE` на обучении.
+`ships` сохраняется специально для головы числа кораблей. `preprocess.py` печатает гистограмму бакетов
+доли по резолвнутым вылетам и **ориентир для `train.frac_weights`** (обратная частота). Шаг 4 переведён
+с `core.utils.planet_at_angle` (numpy) на `core.geo_lite.GeoEngine` (orbit_lite, через шим
+`initial_planets` выше): метки ~99% совпадают со старым резолвером, остальное — случаи, которые
+движок-верный orbit_lite резолвит, а старый дропал. **Поскольку метки могут сдвинуться — перегоняй
+шаг 5 и переобучай** при переходе на него. Он строит torch-кэш движения на каждое состояние, поэтому
+медленнее старого numpy-пути (нормально для одноразового офлайн-джоба).
 
-The `full_send` filter exists because the model's decoder always sends the whole garrison — training
-only on hold-or-send-everything moves keeps labels consistent with that decode (`insights/` documents
-the empirical fractional-shipcount rounding the bot otherwise ignores).
+**Подвох сдвига кадра** (`dataprep/convert.py`): kaggle_environments хранит `obs[t]` *после* применения
+`action[t]`, то есть `action[t]` принят по `obs[t-1]`. Конвертер спаривает `(state_t, action_{t+1})`;
+наивное спаривание в одном кадре даёт ~57% нарушений «послал больше кораблей, чем гарнизон» против 0%
+при сдвиге.
 
-## Local evaluation (`eval/`)
+Фильтр `full_send` существует, потому что декодер исторически слал весь гарнизон; обучение только на
+ходах «hold-или-всё» держало метки согласованными с тем декодом. С появлением головы числа кораблей
+(бакеты доли) частичные вылеты стали полезным сигналом — для этого есть `partial_send`/`all_send`
+(`insights/` документируют эмпирическое округление дробного числа кораблей).
 
-Offline tournament harness that pits checkpoints and heuristics against each other on the **real**
-Kaggle engine — `make('orbit_wars')`, env **1.0.9**, the same version as the downloaded replays. The
-engine is **not** in the repo and **not** in the committed `.venv`: install it with
-`.venv/bin/pip install kaggle-environments==1.30.1 trueskill` (the kaggle-environments install drags in
-heavy transitive deps — jax/transformers/litellm — which is fine for offline use but bloats `.venv`).
+## Локальная оценка (`eval/`)
+
+Офлайн-турнир, стравливающий чекпойнты и эвристики на **настоящем** движке Kaggle — `make('orbit_wars')`,
+env **1.0.9**, та же версия, что у скачанных реплеев. Движок **не** в репо и **не** в `.venv`: ставится
+из `requirements.txt` (`kaggle-environments==1.30.1`, `trueskill==0.4.5`). Установка
+kaggle-environments тянет тяжёлые транзитивные зависимости (jax/transformers/litellm) — нормально для
+офлайна, но раздувает `.venv`.
+
+Вход — Hydra (зеркало `sft.train`):
 
 ```bash
-# 1v1 round-robin: checkpoint (greedy) vs the same checkpoint sampled vs heuristics
-.venv/bin/python -m eval \
-    --agents best=outputs/<ts>/checkpoints/best.pt best_T=outputs/<ts>/checkpoints/best.pt:sample:0.7 \
-             sniper=heuristic:sniper rng=heuristic:random \
-    --mode 1v1 --episodes 25 --out eval_runs/run1
+# пул по умолчанию (бейзлайны-эвристики), 1v1
+.venv/bin/python -m eval.run
 
-.venv/bin/python -m eval --agents a=ckptA.pt b=ckptB.pt sniper=heuristic:sniper hold=heuristic:hold \
-    --mode 4p --episodes 20      # 4-player free-for-all
+# выбор агентов «флажками» — список ИМЁН из каталога configs/agent/
+.venv/bin/python -m eval.run roster=[best, bestT, sniper] ckpt_dir=outputs/<ts>/checkpoints
+
+# готовый пресет ростера из configs/pool/<name>.yaml (baselines / checkpoints / scripted)
+.venv/bin/python -m eval.run pool=scripted mode=1v1 episodes=25
+
+# ad-hoc чекпойнты из разных прогонов: имя в ростере -> путь через `ckpts`
+.venv/bin/python -m eval.run roster=[runA,runB,sniper] \
+    ckpts='{runA: outputs/A/checkpoints/best.pt, runB: outputs/B/checkpoints/best.pt}'
+
+# разовый inline-список (переопределяет roster)
+.venv/bin/python -m eval.run 'agents=[{label: best, ckpt: outputs/ts/checkpoints/best.pt}, {label: sn, heuristic: sniper}]'
 ```
 
-Design: every bot is a `callable(obs, config) -> moves` (`eval/agents.py`). A checkpoint is loaded via
-`PolicyValueNet.load(path)` (restores `ModelConfig`/`FeatureConfig` from the `.pt`); its **decode mode**
-is an interface parameter — `greedy` (argmax, as in submission) or `sample:T` (sample from
-`softmax(logits/T)`; `act()` grew a `decode=`/`temperature=` knob so the decode logic stays in one
-place). Heuristics: `sniper` (send `target.ships+1` to weakest reachable capturable target via
-`core.geo_lite.GeoEngine.validate_launch`), `full_send`, `random`, `hold`. Scripted bots (the third
-kind): hand-written `orbit_lite` planners in `agents/` (`agents.SCRIPTED_AGENTS`), referenced as
-`label=scripted:<name>` (e.g. `scripted:apex_master`) in `--agents` or as `{scripted: <name>}` in a pool
-yaml — see `configs/pool/scripted.yaml`. Mode = number of seats (2 or 4). `eval/runner.py`
-runs one episode and derives full **placement** from final ship counts (the engine reward only flags the
-winner, which FFA TrueSkill can't use). `eval/tournament.py` does round-robin with cyclic seat rotation
-(map is 4-fold symmetric → all rotations cancel positional bias), fixed seeds (same maps for every
-matchup), and parallelism over episodes (`multiprocessing` fork; each checkpoint loads once per worker).
-`eval/rating.py` reports TrueSkill (μ/σ, Kaggle-scale μ₀=600) plus an "A finished above B" matrix.
-Timeouts are deliberately raised in the runner config so we compare policy quality, not CPU inference
-speed.
+Конфиг (`configs/eval.yaml`): каждый `agent/<name>.yaml` → узел `catalog.<name>`; `roster` выбирает
+имена (имя не из каталога ищется в `ckpts` как ad-hoc путь к чекпойнту); группа `pool/*.yaml` — готовые
+пресеты ростера. `mode` = число мест (`1v1` или `4p`).
+
+Дизайн: каждый бот — `callable(obs, config) -> moves` (`eval/agents.py`). **Чекпойнт** грузится через
+`PolicyValueNet.load(path)` (восстанавливает `ModelConfig`/`FeatureConfig` из `.pt`); его **режим
+декода** — параметр интерфейса: `greedy` (argmax, как в сабмишне) или `sample` с температурой (сэмпл из
+`softmax(logits/T)`; `act()` имеет knob `decode=`/`temperature=`, чтобы логика декода жила в одном
+месте — оба выбора, и цели, и бакета доли, идут одним режимом). **Эвристики** (`HEURISTIC_KINDS`):
+`sniper` (шлёт `target.ships+1` в слабейшую захватываемую достижимую цель через
+`core.geo_lite.GeoEngine.validate_launch`), `full_send`, `random`, `hold`. **Скриптовые** боты (третий
+вид): рукописные `orbit_lite`-планировщики в `agents/` (`agents.SCRIPTED_AGENTS` — `producer_hybrid`,
+`apex_master`), задаются как `label=scripted:<name>` в инлайне или `{scripted: <name>}` в pool-yaml —
+см. `configs/pool/scripted.yaml`.
+
+`eval/runner.py` гоняет один эпизод и выводит полное **место** из финальных счётчиков кораблей (награда
+движка отмечает только победителя, чего FFA-TrueSkill использовать не может). `eval/tournament.py` —
+round-robin с циклической ротацией мест (карта 4-кратно симметрична → ротации гасят позиционный байас),
+фиксированные сиды (одни и те же карты для каждого матча) и параллелизм по эпизодам
+(`multiprocessing` fork; каждый чекпойнт грузится раз на воркер). `eval/rating.py` отдаёт TrueSkill
+(μ/σ, Kaggle-шкала μ₀=600) плюс матрицу «A финишировал выше B». Таймауты в раннере намеренно подняты —
+сравниваем качество политики, а не скорость инференса.
+
+## Прочее
+
+- `hydra_utils.py` — общий хелпер `print_cfg` для всех Hydra-входов (печатает полный конфиг на старте;
+  лёгкий, без тяжёлых импортов, чтобы и `sft`, и `eval` могли его звать).
+- `notebooks/` — Kaggle-ноутбуки: `kaggle_01_publish_data.ipynb` (публикация датасета),
+  `kaggle_02_train_eval.ipynb` (обучение/эвал в Kaggle), `analyze_sft.ipynb` (анализ датасета).
+- `insights/*.md` — заметки по механикам и датасету (формат, угол→планета, направление округления доли,
+  гистограммы). Полные правила игры — в `orbit_wars_rules.md`.
