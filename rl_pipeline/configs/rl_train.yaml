@@ -1,0 +1,59 @@
+defaults:
+  - model: policy_value
+  - _self_
+
+# rl8: стартуем с model-soup (avg rl7 15.2M + 21.4M + 27.5M)
+init_ckpt: checkpoints/rl8_static/rl8_init.pt
+resume_ckpt: null
+sft_ckpt: null
+
+device: "cuda"
+seed: 42
+wandb: false
+wandb_project: orbit-rl
+
+rl:
+  # rl8: 50% 1v1 / 50% FFA
+  num_envs: 256
+  ffa_ratio: 0.5
+
+  rollout_steps: 512
+  total_steps: 50_000_000
+
+  gamma: 0.99
+  gae_lambda: 0.95
+
+  ppo_epochs: 4
+  minibatch_size: 2048
+  clip_eps: 0.2
+  value_coeff: 0.25
+  entropy_coeff: 0.0
+  max_grad_norm: 1.0
+  target_kl: 0.05
+
+  reinit_frac_bias: null  # init_ckpt уже обучен, не трогать frac-голову
+
+  optimizer: adamw
+  lr: 1.0e-4
+  weight_decay: 0.0
+
+  save_dir: checkpoints/rl8
+  save_every: 100_000
+
+  # rl8: вероятность Rust-PL на оппонент-слот (1 - pl_prob = self-play)
+  pl_prob: 0.5
+
+  # Self-play пул: 3 статичных (rl7 15/21/27M) + trailing-self (4 сейва назад)
+  sp_static_paths:
+    - checkpoints/rl8_static/s15.pt
+    - checkpoints/rl8_static/s21.pt
+    - checkpoints/rl8_static/s27.pt
+  sp_trail_back: 4
+  sp_temperature: 0.5
+  sp_ema_alpha: 0.05
+  sp_ckpt_interval: 100_000
+
+  opp_temperature: 0.5
+  opp_ema_alpha: 0.05
+
+  shaping_alpha: 0.3
