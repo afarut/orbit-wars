@@ -1,0 +1,34 @@
+# Лёгкие проверки без torch: компиляция всех .py + узкий ruff (только реальные
+# ошибки, не стиль). Секунды, без тяжёлых зависимостей — гоняются на каждый push/PR.
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Отменять устаревший прогон, если на ту же ветку прилетел новый push.
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Синтаксис всех трекаемых .py (ноль зависимостей).
+      - name: compileall
+        run: python -m compileall -q .
+
+      # Только критичные правила: синтаксис (E9), битые сравнения (F63),
+      # синтаксис ключевых слов (F7), неопределённые имена (F82). Стиль не трогаем.
+      - name: ruff
+        run: |
+          pip install ruff
+          ruff check --select E9,F63,F7,F82 .

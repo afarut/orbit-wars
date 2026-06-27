@@ -1,0 +1,14 @@
+# build context должен оставаться лёгким: образ COPY-ит только requirements.txt,
+# код и данные приезжают volume'ом из compose.
+.venv/
+data/
+replays/
+outputs/
+tb/
+*.pt
+*.jsonl
+.git/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/

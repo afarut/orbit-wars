@@ -1,0 +1,24 @@
+# Dev-среда под CUDA для Orbit Wars.
+# Поднимает долгоживущий контейнер; заходишь в него `docker compose exec dev bash`.
+services:
+  dev:
+    build: .
+    image: orbits-dev
+    container_name: orbits-dev
+    gpus: all              # проброс всех GPU хоста (нужен nvidia-container-toolkit)
+    ipc: host              # критично: иначе DataLoader-воркеры падают с Bus error (мало /dev/shm)
+    working_dir: /workspace
+    volumes:
+      - .:/workspace                  # живой код; data/replays/outputs пишутся прямо на хост
+      - ~/.kaggle:/root/.kaggle:ro    # креды для dataprep.download (убери строку, если не нужно)
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+    command: sleep infinity
+    # Старый Compose (< v2.30) не знает `gpus: all` — тогда вместо неё:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - { driver: nvidia, count: all, capabilities: [gpu] }
